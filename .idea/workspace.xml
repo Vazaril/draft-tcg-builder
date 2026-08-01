@@ -4,7 +4,55 @@
     <option name="autoReloadType" value="SELECTIVE" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="63d615d4-f11d-4db6-9fe2-00dd54bd2938" name="Changes" comment="" />
+    <list default="true" id="63d615d4-f11d-4db6-9fe2-00dd54bd2938" name="Changes" comment="">
+      <change afterPath="$PROJECT_DIR$/.prettierrc.json" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/README.md" beforeDir="false" afterPath="$PROJECT_DIR$/README.md" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/app/auth/confirm/route.ts" beforeDir="false" afterPath="$PROJECT_DIR$/app/auth/confirm/route.ts" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/app/auth/error/page.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/app/auth/error/page.tsx" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/app/auth/forgot-password/page.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/app/auth/forgot-password/page.tsx" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/app/auth/login/page.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/app/auth/login/page.tsx" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/app/auth/sign-up-success/page.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/app/auth/sign-up-success/page.tsx" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/app/auth/sign-up/page.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/app/auth/sign-up/page.tsx" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/app/auth/update-password/page.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/app/auth/update-password/page.tsx" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/app/layout.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/app/layout.tsx" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/app/page.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/app/page.tsx" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/app/protected/layout.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/app/protected/layout.tsx" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/app/protected/page.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/app/protected/page.tsx" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/components/auth-button.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/components/auth-button.tsx" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/components/deploy-button.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/components/deploy-button.tsx" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/components/env-var-warning.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/components/env-var-warning.tsx" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/components/forgot-password-form.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/components/forgot-password-form.tsx" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/components/hero.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/components/hero.tsx" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/components/login-form.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/components/login-form.tsx" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/components/logout-button.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/components/logout-button.tsx" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/components/next-logo.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/components/next-logo.tsx" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/components/sign-up-form.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/components/sign-up-form.tsx" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/components/theme-switcher.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/components/theme-switcher.tsx" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/components/tutorial/code-block.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/components/tutorial/code-block.tsx" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/components/tutorial/connect-supabase-steps.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/components/tutorial/connect-supabase-steps.tsx" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/components/tutorial/fetch-data-steps.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/components/tutorial/fetch-data-steps.tsx" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/components/tutorial/sign-up-user-steps.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/components/tutorial/sign-up-user-steps.tsx" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/components/tutorial/tutorial-step.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/components/tutorial/tutorial-step.tsx" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/components/ui/badge.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/components/ui/badge.tsx" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/components/ui/button.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/components/ui/button.tsx" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/components/ui/card.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/components/ui/card.tsx" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/components/ui/checkbox.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/components/ui/checkbox.tsx" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/components/ui/dropdown-menu.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/components/ui/dropdown-menu.tsx" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/components/ui/input.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/components/ui/input.tsx" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/components/ui/label.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/components/ui/label.tsx" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/components/update-password-form.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/components/update-password-form.tsx" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/eslint.config.mjs" beforeDir="false" afterPath="$PROJECT_DIR$/eslint.config.mjs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/lib/supabase/client.ts" beforeDir="false" afterPath="$PROJECT_DIR$/lib/supabase/client.ts" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/lib/supabase/proxy.ts" beforeDir="false" afterPath="$PROJECT_DIR$/lib/supabase/proxy.ts" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/lib/supabase/server.ts" beforeDir="false" afterPath="$PROJECT_DIR$/lib/supabase/server.ts" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/lib/utils.ts" beforeDir="false" afterPath="$PROJECT_DIR$/lib/utils.ts" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/next.config.ts" beforeDir="false" afterPath="$PROJECT_DIR$/next.config.ts" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/package-lock.json" beforeDir="false" afterPath="$PROJECT_DIR$/package-lock.json" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/package.json" beforeDir="false" afterPath="$PROJECT_DIR$/package.json" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/proxy.ts" beforeDir="false" afterPath="$PROJECT_DIR$/proxy.ts" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/tailwind.config.ts" beforeDir="false" afterPath="$PROJECT_DIR$/tailwind.config.ts" afterDir="false" />
+    </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
     <option name="HIGHLIGHT_NON_ACTIVE_CHANGELIST" value="false" />
@@ -13,22 +61,81 @@
   <component name="Git.Settings">
     <option name="RECENT_GIT_ROOT_PATH" value="$PROJECT_DIR$" />
   </component>
-  <component name="GitHubPullRequestSearchHistory"><![CDATA[{
-  "lastFilter": {
-    "state": "OPEN",
-    "assignee": "Vazaril"
+  <component name="GitHubPullRequestSearchHistory">{
+  &quot;lastFilter&quot;: {
+    &quot;state&quot;: &quot;OPEN&quot;,
+    &quot;assignee&quot;: &quot;Vazaril&quot;
   }
-}]]></component>
-  <component name="GithubPullRequestsUISettings"><![CDATA[{
-  "selectedUrlAndAccountId": {
-    "url": "https://github.com/Vazaril/draft-tcg-builder.git",
-    "accountId": "23f148ba-d4c0-473b-af29-f4c56d6f99dd"
+}</component>
+  <component name="GithubPullRequestsUISettings">{
+  &quot;selectedUrlAndAccountId&quot;: {
+    &quot;url&quot;: &quot;https://github.com/Vazaril/draft-tcg-builder.git&quot;,
+    &quot;accountId&quot;: &quot;23f148ba-d4c0-473b-af29-f4c56d6f99dd&quot;
   }
-}]]></component>
-  <component name="ProjectColorInfo"><![CDATA[{
-  "associatedIndex": 1,
-  "fromUser": false
-}]]></component>
+}</component>
+  <component name="NextEditCompletionFeaturesState">
+    <decayedCancelled>
+      <entry key="MS100" value="1.0" />
+      <entry key="MS500" value="1.0" />
+      <entry key="S2" value="1.0" />
+      <entry key="S5" value="1.0000000000326321" />
+      <entry key="S10" value="1.0000145391555948" />
+      <entry key="S30" value="1.0884163495912655" />
+      <entry key="S60" value="1.7942347687292006" />
+      <entry key="M2" value="3.8906597119133446" />
+      <entry key="M5" value="16.525562225400087" />
+      <entry key="M10" value="44.95878156018296" />
+      <entry key="M15" value="68.24519220756616" />
+      <entry key="M30" value="108.35008460523129" />
+      <entry key="H1" value="138.8671003131644" />
+      <entry key="H2" value="157.87967050894417" />
+      <entry key="H4" value="168.51844782011958" />
+      <entry key="D1" value="178.02484436167177" />
+      <entry key="W1" value="179.71628585752697" />
+    </decayedCancelled>
+    <decayedSelected>
+      <entry key="MS100" value="0.0" />
+      <entry key="MS500" value="0.0" />
+      <entry key="S2" value="0.0" />
+      <entry key="S5" value="0.0" />
+      <entry key="S10" value="0.0" />
+      <entry key="S30" value="0.0" />
+      <entry key="S60" value="0.0" />
+      <entry key="M2" value="0.0" />
+      <entry key="M5" value="0.0" />
+      <entry key="M10" value="0.0" />
+      <entry key="M15" value="0.0" />
+      <entry key="M30" value="0.0" />
+      <entry key="H1" value="0.0" />
+      <entry key="H2" value="0.0" />
+      <entry key="H4" value="0.0" />
+      <entry key="D1" value="0.0" />
+      <entry key="W1" value="0.0" />
+    </decayedSelected>
+    <decayedShown>
+      <entry key="MS100" value="0.9330329915368074" />
+      <entry key="MS500" value="0.9862327044933592" />
+      <entry key="S2" value="0.9965402628278678" />
+      <entry key="S5" value="0.9986146661320807" />
+      <entry key="S10" value="0.9993210871726793" />
+      <entry key="S30" value="1.0867147211747972" />
+      <entry key="S60" value="1.7871086532219995" />
+      <entry key="M2" value="3.879581271895736" />
+      <entry key="M5" value="16.516020434161444" />
+      <entry key="M10" value="44.95209930178848" />
+      <entry key="M15" value="68.24006282453482" />
+      <entry key="M30" value="108.34705290608412" />
+      <entry key="H1" value="138.86542960334583" />
+      <entry key="H2" value="157.8787897925494" />
+      <entry key="H4" value="168.51799512987586" />
+      <entry key="D1" value="178.0247671074723" />
+      <entry key="W1" value="179.7162747757102" />
+    </decayedShown>
+  </component>
+  <component name="ProjectColorInfo">{
+  &quot;associatedIndex&quot;: 1,
+  &quot;fromUser&quot;: false
+}</component>
   <component name="ProjectId" id="3HH9UBNnthuXZtbx7ZAiDM5271L" />
   <component name="ProjectViewState">
     <option name="hideEmptyMiddlePackages" value="true" />
@@ -42,15 +149,25 @@
     "codeWithMe.voiceChat.enabledByDefault": "false",
     "com.intellij.ml.llm.matterhorn.ej.ui.settings.DefaultModelSelectionForGA.v1": "true",
     "git-widget-placeholder": "main",
+    "javascript.preferred.runtime.type.id": "node",
     "junie.onboarding.icon.badge.shown": "true",
+    "last_opened_file_path": "/home/vaz/WebstormProjects/draft-tcg-builder",
     "node.js.detected.package.eslint": "true",
+    "node.js.detected.package.jshint": "true",
     "node.js.detected.package.tslint": "true",
     "node.js.selected.package.eslint": "(autodetect)",
+    "node.js.selected.package.jshint": "",
     "node.js.selected.package.tslint": "(autodetect)",
     "nodejs_package_manager_path": "npm",
-    "to.speed.mode.migration.done": "true"
+    "to.speed.mode.migration.done": "true",
+    "ts.external.directory.path": "/home/vaz/WebstormProjects/draft-tcg-builder/node_modules/typescript/lib"
   }
 }]]></component>
+  <component name="RecentsManager">
+    <key name="CopyFile.RECENT_KEYS">
+      <recent name="$PROJECT_DIR$" />
+    </key>
+  </component>
   <component name="SharedIndexes">
     <attachedChunks>
       <set>
