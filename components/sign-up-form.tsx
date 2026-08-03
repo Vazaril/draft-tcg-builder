@@ -13,6 +13,7 @@ import { useState } from 'react';
 export function SignUpForm({ className, ...props }: React.ComponentPropsWithoutRef<'div'>) {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [username, setUsername] = useState('');
   const [repeatPassword, setRepeatPassword] = useState('');
   const [error, setError] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
@@ -30,11 +31,24 @@ export function SignUpForm({ className, ...props }: React.ComponentPropsWithoutR
       return;
     }
 
+    if (username.length > 6) {
+      setError('Username cant be over 6 characters long')
+      setIsLoading(false)
+      return;
+    } else if (username.length < 3) {
+      setError('Username must be at least 3 characters long')
+      setIsLoading(false)
+      return;
+    }
+
     try {
       const { error } = await supabase.auth.signUp({
         email,
         password,
         options: {
+          data: {
+            username: username
+          },
           emailRedirectTo: `${window.location.origin}/protected`,
         },
       });
@@ -66,6 +80,17 @@ export function SignUpForm({ className, ...props }: React.ComponentPropsWithoutR
                   required
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
+                />
+              </div>
+              <div className="grid gap-2">
+                <Label htmlFor="username">Username</Label>
+                <Input
+                    id="username"
+                    type="username"
+                    placeholder="LeroyJenkins"
+                    required
+                    value={username}
+                    onChange={(e) => setUsername(e.target.value)}
                 />
               </div>
               <div className="grid gap-2">
