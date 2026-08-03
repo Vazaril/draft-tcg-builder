@@ -32,12 +32,12 @@ export function SignUpForm({ className, ...props }: React.ComponentPropsWithoutR
     }
 
     if (username.length > 6) {
-      setError('Username cant be over 6 characters long')
-      setIsLoading(false)
+      setError('Username cant be over 6 characters long');
+      setIsLoading(false);
       return;
     } else if (username.length < 3) {
-      setError('Username must be at least 3 characters long')
-      setIsLoading(false)
+      setError('Username must be at least 3 characters long');
+      setIsLoading(false);
       return;
     }
 
@@ -47,7 +47,7 @@ export function SignUpForm({ className, ...props }: React.ComponentPropsWithoutR
         password,
         options: {
           data: {
-            username: username
+            username: username,
           },
           emailRedirectTo: `${window.location.origin}/protected`,
         },
@@ -85,12 +85,12 @@ export function SignUpForm({ className, ...props }: React.ComponentPropsWithoutR
               <div className="grid gap-2">
                 <Label htmlFor="username">Username</Label>
                 <Input
-                    id="username"
-                    type="username"
-                    placeholder="LeroyJenkins"
-                    required
-                    value={username}
-                    onChange={(e) => setUsername(e.target.value)}
+                  id="username"
+                  type="username"
+                  placeholder="LeroyJenkins"
+                  required
+                  value={username}
+                  onChange={(e) => setUsername(e.target.value)}
                 />
               </div>
               <div className="grid gap-2">
