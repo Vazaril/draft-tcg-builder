@@ -9,7 +9,7 @@ import { Label } from '@/components/ui/label';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useState } from 'react';
-import {checkUsername} from "@/app/auth/auth-service";
+import { checkUsername } from '@/app/auth/auth-service';
 
 export function SignUpForm({ className, ...props }: React.ComponentPropsWithoutRef<'div'>) {
   const [email, setEmail] = useState('');
@@ -43,10 +43,10 @@ export function SignUpForm({ className, ...props }: React.ComponentPropsWithoutR
     }
 
     try {
-      const { username_error, username_success } = await checkUsername(username);
-      if (username_error) throw username_error;
+      const { usernameError, usernameSuccess } = await checkUsername(username);
+      if (usernameError) throw usernameError;
 
-      if (username_success) {
+      if (usernameSuccess) {
         const { error } = await supabase.auth.signUp({
           email,
           password,
@@ -60,7 +60,6 @@ export function SignUpForm({ className, ...props }: React.ComponentPropsWithoutR
         if (error) throw error;
         router.push('/auth/sign-up-success');
       }
-
     } catch (error: unknown) {
       setError(error instanceof Error ? error.message : 'An error occurred');
     } finally {
