@@ -4,30 +4,10 @@
     <option name="autoReloadType" value="SELECTIVE" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="63d615d4-f11d-4db6-9fe2-00dd54bd2938" name="Changes" comment="add: basic .prettierrc.json and eslint.config.mjs rules for formats and ignores">
+    <list default="true" id="63d615d4-f11d-4db6-9fe2-00dd54bd2938" name="Changes" comment="refactor: prettier and eslint changes">
       <change afterPath="$PROJECT_DIR$/app/auth/auth-service.ts" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/classes/inputs/checkbox-data.ts" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/classes/inputs/input-form-data.ts" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/app/opengraph-image.png" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/app/page.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/app/page.tsx" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/app/protected/layout.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/app/protected/layout.tsx" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/app/protected/page.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/app/protected/page.tsx" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/app/twitter-image.png" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/components/auth-button.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/components/auth-button.tsx" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/components/deploy-button.tsx" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/components/env-var-warning.tsx" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/components/hero.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/components/hero.tsx" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/components/next-logo.tsx" beforeDir="false" />
       <change beforePath="$PROJECT_DIR$/components/sign-up-form.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/components/sign-up-form.tsx" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/components/supabase-logo.tsx" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/components/tutorial/code-block.tsx" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/components/tutorial/connect-supabase-steps.tsx" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/components/tutorial/fetch-data-steps.tsx" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/components/tutorial/sign-up-user-steps.tsx" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/components/tutorial/tutorial-step.tsx" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/lib/supabase/proxy.ts" beforeDir="false" afterPath="$PROJECT_DIR$/lib/supabase/proxy.ts" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/lib/utils.ts" beforeDir="false" afterPath="$PROJECT_DIR$/lib/utils.ts" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -63,61 +43,61 @@
 }</component>
   <component name="NextEditCompletionFeaturesState">
     <decayedCancelled>
-      <entry key="MS100" value="7.843886006592305E-6" />
-      <entry key="MS500" value="0.0952590518970046" />
-      <entry key="S2" value="0.5564908210866473" />
-      <entry key="S5" value="0.8519398840981306" />
-      <entry key="S10" value="1.1370011529916197" />
-      <entry key="S30" value="1.5897737243755705" />
-      <entry key="S60" value="1.7731895635953168" />
-      <entry key="M2" value="1.8805276296009314" />
-      <entry key="M5" value="1.9548850146529066" />
-      <entry key="M10" value="2.2745823377046053" />
-      <entry key="M15" value="3.2947978516814977" />
-      <entry key="M30" value="9.522988890273238" />
-      <entry key="H1" value="33.9923772364092" />
-      <entry key="H2" value="87.41742814005204" />
-      <entry key="H4" value="149.11326500953166" />
-      <entry key="D1" value="238.10079308794093" />
-      <entry key="W1" value="258.43453251455855" />
+      <entry key="MS100" value="1.0" />
+      <entry key="MS500" value="1.0" />
+      <entry key="S2" value="1.0000793725937553" />
+      <entry key="S5" value="1.0230404561526707" />
+      <entry key="S10" value="1.1802514617986044" />
+      <entry key="S30" value="2.7754874089907595" />
+      <entry key="S60" value="5.616262898956264" />
+      <entry key="M2" value="10.562170016222746" />
+      <entry key="M5" value="24.11462792613696" />
+      <entry key="M10" value="46.3491118584818" />
+      <entry key="M15" value="63.15504537932927" />
+      <entry key="M30" value="93.00717534456628" />
+      <entry key="H1" value="130.51990489265657" />
+      <entry key="H2" value="190.83765109835738" />
+      <entry key="H4" value="260.27406065472354" />
+      <entry key="D1" value="364.30345536622025" />
+      <entry key="W1" value="388.6997850990872" />
     </decayedCancelled>
     <decayedSelected>
-      <entry key="MS100" value="1.0" />
-      <entry key="MS500" value="1.000000000000064" />
-      <entry key="S2" value="1.0005027051188642" />
-      <entry key="S5" value="1.0479209394014806" />
-      <entry key="S10" value="1.218908518339238" />
-      <entry key="S30" value="1.602681074425106" />
-      <entry key="S60" value="1.776325366341398" />
-      <entry key="M2" value="1.88109328532639" />
-      <entry key="M5" value="1.95245540399977" />
-      <entry key="M10" value="2.10051602854206" />
-      <entry key="M15" value="2.508141123191229" />
-      <entry key="M30" value="4.2596068144712405" />
-      <entry key="H1" value="6.914909553204446" />
-      <entry key="H2" value="9.49508767934783" />
-      <entry key="H4" value="11.40882157059206" />
-      <entry key="D1" value="13.508382177542554" />
-      <entry key="W1" value="13.928096345852556" />
+      <entry key="MS100" value="7.549274621981464E-190" />
+      <entry key="MS500" value="1.5059078885359243E-38" />
+      <entry key="S2" value="4.434413527211476E-10" />
+      <entry key="S5" value="2.6240977998418647E-4" />
+      <entry key="S10" value="0.02274031005369545" />
+      <entry key="S30" value="0.493122001826234" />
+      <entry key="S60" value="1.3361454902341487" />
+      <entry key="M2" value="2.8742562727133274" />
+      <entry key="M5" value="5.953872333929142" />
+      <entry key="M10" value="8.422147695132784" />
+      <entry key="M15" value="9.807645434207323" />
+      <entry key="M30" value="12.512571785700459" />
+      <entry key="H1" value="15.970820579484956" />
+      <entry key="H2" value="19.473466143993015" />
+      <entry key="H4" value="22.187127069469124" />
+      <entry key="D1" value="25.265315180183592" />
+      <entry key="W1" value="25.892232101265" />
     </decayedSelected>
     <decayedShown>
-      <entry key="MS100" value="9.328745949396102E-6" />
-      <entry key="MS500" value="0.11354465098774208" />
-      <entry key="S2" value="0.9106483993460767" />
-      <entry key="S5" value="1.5231101022732703" />
-      <entry key="S10" value="2.0718600937093954" />
-      <entry key="S30" value="3.02662710951841" />
-      <entry key="S60" value="3.4498377871259023" />
-      <entry key="M2" value="3.706632888524983" />
-      <entry key="M5" value="3.883949322745126" />
-      <entry key="M10" value="4.362633690576758" />
-      <entry key="M15" value="5.793384513679125" />
-      <entry key="M30" value="13.775026178611778" />
-      <entry key="H1" value="40.90122810389319" />
-      <entry key="H2" value="96.90828974191628" />
-      <entry key="H4" value="160.51950055315683" />
-      <entry key="D1" value="251.60865335030448" />
-      <entry key="W1" value="272.36255163108075" />
+      <entry key="MS100" value="1.2848220604569342E-6" />
+      <entry key="MS500" value="0.06633895055936216" />
+      <entry key="S2" value="0.5075268787872488" />
+      <entry key="S5" value="0.7758608631032977" />
+      <entry key="S10" value="1.035739214385244" />
+      <entry key="S30" value="3.137753559181058" />
+      <entry key="S60" value="6.838935047380707" />
+      <entry key="M2" value="13.340243493052261" />
+      <entry key="M5" value="29.99857398424553" />
+      <entry key="M10" value="54.72321467927232" />
+      <entry key="M15" value="72.92561336076248" />
+      <entry key="M30" value="105.49635507958553" />
+      <entry key="H1" value="146.4759589667506" />
+      <entry key="H2" value="210.30212311108713" />
+      <entry key="H4" value="282.4560384709648" />
+      <entry key="D1" value="389.5677839361763" />
+      <entry key="W1" value="414.5918724287387" />
     </decayedShown>
   </component>
   <component name="ProblemsViewState">
@@ -192,7 +172,7 @@
       <option name="presentableId" value="Default" />
       <updated>1785514140801</updated>
       <workItem from="1785514141812" duration="647000" />
-      <workItem from="1785761903732" duration="9050000" />
+      <workItem from="1785761903732" duration="10682000" />
     </task>
     <task id="LOCAL-00001" summary="add: basic .prettierrc.json and eslint.config.mjs rules for formats and ignores">
       <option name="closed" value="true" />
@@ -202,7 +182,31 @@
       <option name="project" value="LOCAL" />
       <updated>1785589646898</updated>
     </task>
-    <option name="localTasksCounter" value="2" />
+    <task id="LOCAL-00002" summary="remove: tutorial files and components">
+      <option name="closed" value="true" />
+      <created>1785774264414</created>
+      <option name="number" value="00002" />
+      <option name="presentableId" value="LOCAL-00002" />
+      <option name="project" value="LOCAL" />
+      <updated>1785774264414</updated>
+    </task>
+    <task id="LOCAL-00003" summary="refactor: registration logic to feature username and changed baisc components to work without tutorial images">
+      <option name="closed" value="true" />
+      <created>1785774342341</created>
+      <option name="number" value="00003" />
+      <option name="presentableId" value="LOCAL-00003" />
+      <option name="project" value="LOCAL" />
+      <updated>1785774342341</updated>
+    </task>
+    <task id="LOCAL-00004" summary="refactor: prettier and eslint changes">
+      <option name="closed" value="true" />
+      <created>1785774397538</created>
+      <option name="number" value="00004" />
+      <option name="presentableId" value="LOCAL-00004" />
+      <option name="project" value="LOCAL" />
+      <updated>1785774397538</updated>
+    </task>
+    <option name="localTasksCounter" value="5" />
     <servers />
   </component>
   <component name="TypeScriptGeneratedFilesManager">
@@ -210,6 +214,9 @@
   </component>
   <component name="VcsManagerConfiguration">
     <MESSAGE value="add: basic .prettierrc.json and eslint.config.mjs rules for formats and ignores" />
-    <option name="LAST_COMMIT_MESSAGE" value="add: basic .prettierrc.json and eslint.config.mjs rules for formats and ignores" />
+    <MESSAGE value="remove: tutorial files and components" />
+    <MESSAGE value="refactor: registration logic to feature username and changed baisc components to work without tutorial images" />
+    <MESSAGE value="refactor: prettier and eslint changes" />
+    <option name="LAST_COMMIT_MESSAGE" value="refactor: prettier and eslint changes" />
   </component>
 </project>
