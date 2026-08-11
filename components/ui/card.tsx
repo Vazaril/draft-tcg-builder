@@ -21,14 +21,22 @@ const CardHeader = React.forwardRef<HTMLDivElement, React.HTMLAttributes<HTMLDiv
 CardHeader.displayName = 'CardHeader';
 
 const CardTitle = React.forwardRef<HTMLDivElement, React.HTMLAttributes<HTMLDivElement>>(
-  ({ className, ...props }, ref) => (
+  ({ className, children, ...props }, ref) => (
     <div
       ref={ref}
-      className={cn('text-xl font-pixel font-semibold text-foreground leading-none tracking-tight', className)}
+      className={cn(
+        'flex items-center gap-2.5 text-xl font-pixel font-semibold ext-foreground leading-none tracking-tight',
+        className
+      )}
       {...props}
-    />
+    >
+      <div className="h-3.5 w-3.5 shrink-0 bg-primary border border-primary shadow-[0_0_5px_hsl(var(--primary))] hover:shadow-[0_0_10px_hsl(var(--primary))]" />
+
+      <span>{children}</span>
+    </div>
   )
 );
+
 CardTitle.displayName = 'CardTitle';
 
 const CardDescription = React.forwardRef<HTMLDivElement, React.HTMLAttributes<HTMLDivElement>>(

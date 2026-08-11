@@ -1,5 +1,5 @@
 import type { Metadata } from 'next';
-import { Pixelify_Sans, Space_Grotesk  } from 'next/font/google';
+import { Pixelify_Sans, Space_Grotesk } from 'next/font/google';
 import { ThemeProvider } from 'next-themes';
 import './globals.css';
 
@@ -17,14 +17,14 @@ const pixelifySans = Pixelify_Sans({
   variable: '--font-pixelify-sans',
   display: 'swap',
   subsets: ['latin'],
-  weight: "400",
+  weight: '500',
 });
 
 const spaceGrotesk = Space_Grotesk({
   variable: '--font-space-grotesk',
   display: 'swap',
   subsets: ['latin'],
-  weight: "400",
+  weight: '500',
 });
 
 export default function RootLayout({
