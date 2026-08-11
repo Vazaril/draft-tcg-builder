@@ -1,5 +1,5 @@
 import type { Metadata } from 'next';
-import { Geist } from 'next/font/google';
+import { Pixelify_Sans, Space_Grotesk  } from 'next/font/google';
 import { ThemeProvider } from 'next-themes';
 import './globals.css';
 
@@ -13,10 +13,18 @@ export const metadata: Metadata = {
   description: 'The fastest way to build apps with Next.js and Supabase',
 };
 
-const geistSans = Geist({
-  variable: '--font-geist-sans',
+const pixelifySans = Pixelify_Sans({
+  variable: '--font-pixelify-sans',
   display: 'swap',
   subsets: ['latin'],
+  weight: "400",
+});
+
+const spaceGrotesk = Space_Grotesk({
+  variable: '--font-space-grotesk',
+  display: 'swap',
+  subsets: ['latin'],
+  weight: "400",
 });
 
 export default function RootLayout({
@@ -26,7 +34,7 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en" suppressHydrationWarning>
-      <body className={`${geistSans.className} antialiased`}>
+      <body className={`${spaceGrotesk.className} ${pixelifySans.variable} antialiased`}>
         <ThemeProvider
           attribute="class"
           defaultTheme="system"

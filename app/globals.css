@@ -58,7 +58,7 @@
   }
   .classic {
     --background: 227 47% 10%;
-    --foreground: 228 38% 95%;
+    --foreground: 229 24% 63%;
     --card: 228 40% 12%;
     --card-foreground: 228 38% 95%;
     --popover: 228 40% 12%;
@@ -67,8 +67,8 @@
     --primary-foreground: 227 47% 10%;
     --secondary: 228 41% 16%;
     --secondary-foreground: 228 38% 95%;
-    --muted: 0, 0%, 46%;
-    --muted-foreground: 229 24% 63%;
+    --muted: 231, 21%, 45%;
+    --muted-foreground: 0, 0%, 46%;
     --accent: 228 41% 16%;
     --accent-foreground: 228 38% 95%;
     --destructive: 0 62.8% 30.6%;
