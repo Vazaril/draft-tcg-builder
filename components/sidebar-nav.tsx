@@ -14,13 +14,11 @@ const NAV_ITEMS = [
 
 export function SidebarNav() {
   const pathname = usePathname();
-  console.log(pathname);
 
   return (
     <div className="flex flex-col gap-2">
       {NAV_ITEMS.map((item) => {
         const isActive = pathname === item.href || pathname.endsWith(`${item.href}`);
-        console.log(isActive);
 
         return (
           <Button key={item.name} variant={isActive ? 'sidebarActive' : 'sidebar'} asChild>

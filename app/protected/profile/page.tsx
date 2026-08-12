@@ -1,10 +1,16 @@
 import { redirect } from 'next/navigation';
-
 import { createClient } from '@/lib/supabase/server';
-import { InfoIcon } from 'lucide-react';
 import { Suspense } from 'react';
+import {
+  PageShell,
+  PageHeader,
+  PageTitle,
+  PageDescription,
+  PageContent,
+} from '@/components/ui/page-shell';
+import { ProfileAvatar } from '@/components/profile-avatar';
 
-async function UserDetails() {
+async function UserProfileData() {
   const supabase = await createClient();
   const { data, error } = await supabase.auth.getClaims();
 
@@ -12,26 +18,30 @@ async function UserDetails() {
     redirect('/auth/login');
   }
 
-  return JSON.stringify(data.claims, null, 2);
+  const username = data.claims.user_metadata?.username || 'Unknown';
+
+  return (
+    <div className="grid max-w-2xl gap-8">
+      <ProfileAvatar username={username} />
+    </div>
+  );
 }
 
-export default function ProtectedPage() {
+export default function ProfilePage() {
   return (
-    <div className="flex-1 w-full flex flex-col gap-12">
-      <div className="w-full">
-        <div className="bg-accent text-sm p-3 px-5 rounded-md text-foreground flex gap-3 items-center">
-          <InfoIcon size="16" strokeWidth={2} />
-          This is a protected page that you can only see as an authenticated user
-        </div>
-      </div>
-      <div className="flex flex-col gap-2 items-start">
-        <h2 className="font-bold text-2xl mb-4">Your user details</h2>
-        <pre className="text-xs font-mono p-3 rounded border max-h-32 overflow-auto">
-          <Suspense>
-            <UserDetails />
-          </Suspense>
-        </pre>
-      </div>
-    </div>
+    <PageShell>
+      <PageHeader>
+        <PageTitle>Profile</PageTitle>
+        <PageDescription>
+          Manage your account settings, update your username, and secure your account.
+        </PageDescription>
+      </PageHeader>
+
+      <PageContent>
+        <Suspense fallback={<div className="h-32 w-32 animate-pulse rounded-2xl bg-muted" />}>
+          <UserProfileData />
+        </Suspense>
+      </PageContent>
+    </PageShell>
   );
 }

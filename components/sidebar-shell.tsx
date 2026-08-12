@@ -66,7 +66,7 @@ export function SidebarShell({ sidebar, headerActions, children }: SidebarShellP
         </header>
 
         <main className="flex-1 overflow-y-auto p-6 md:p-8">
-          <div className="mx-auto max-w-5xl">{children}</div>
+          <div className="max-w-5xl">{children}</div>
         </main>
       </div>
     </div>
