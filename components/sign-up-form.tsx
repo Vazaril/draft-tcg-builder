@@ -53,11 +53,15 @@ export function SignUpForm({ className, ...props }: React.ComponentPropsWithoutR
             data: {
               username: username,
             },
-            emailRedirectTo: `${window.location.origin}/protected`,
+            emailRedirectTo: `${window.location.origin}/protected/profile`,
           },
         });
         if (error) throw error;
         router.push('/auth/sign-up-success');
+        setEmail('');
+        setPassword('');
+        setRepeatPassword('');
+        setUsername('');
       }
     } catch (error: unknown) {
       setError(error instanceof Error ? error.message : 'An error occurred');
