@@ -1,6 +1,11 @@
 from flask import Flask, jsonify
 
+from routes.auth import auth_bp
+from routes.decks import decks_bp
+
 app = Flask(__name__)
+app.register_blueprint(auth_bp)
+app.register_blueprint(decks_bp)
 
 
 @app.get("/health")
