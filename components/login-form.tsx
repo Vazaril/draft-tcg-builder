@@ -8,6 +8,7 @@ import { Input } from '@/components/ui/input';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useState } from 'react';
+import { siteConfig } from '@/config/site';
 
 export function LoginForm({ className, ...props }: React.ComponentPropsWithoutRef<'div'>) {
   const [email, setEmail] = useState('');
@@ -29,7 +30,7 @@ export function LoginForm({ className, ...props }: React.ComponentPropsWithoutRe
       });
       if (error) throw error;
       // Update this route to redirect to an authenticated route. The user already has an active session.
-      router.push('/protected/profile');
+      router.push(siteConfig.logged_in_routing);
       setEmail('');
       setPassword('');
     } catch (error: unknown) {

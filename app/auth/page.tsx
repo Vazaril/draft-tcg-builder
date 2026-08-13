@@ -1,5 +1,6 @@
 import { redirect } from 'next/navigation';
+import { siteConfig } from '@/config/site';
 
 export default function AuthPage() {
-  redirect('/auth/login');
+  redirect(siteConfig.logged_out_routing);
 }
