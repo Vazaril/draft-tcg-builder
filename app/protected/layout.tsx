@@ -4,12 +4,13 @@ import { Suspense } from 'react';
 import { SidebarShell } from '@/components/sidebar-shell';
 import { SidebarNav } from '@/components/sidebar-nav';
 import { Sidebar, SidebarHeader, SidebarContent, SidebarFooter } from '@/components/ui/sidebar';
+import { siteConfig } from '@/config/site';
 
 export default function ProtectedLayout({ children }: { children: React.ReactNode }) {
   const sidebarContent = (
     <Sidebar>
       <SidebarHeader>
-        <h2 className="font-pixel text-2xl font-bold text-primary">D.R.A.F.T</h2>
+        <h2 className="font-pixel text-2xl font-bold text-primary">{siteConfig.title}</h2>
       </SidebarHeader>
       <SidebarContent>
         <SidebarNav />
