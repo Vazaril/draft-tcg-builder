@@ -17,6 +17,10 @@ const buttonVariants = cva(
         secondary: 'bg-secondary text-secondary-foreground shadow-sm hover:bg-secondary/80',
         ghost: 'hover:bg-accent hover:text-accent-foreground',
         link: 'text-primary underline-offset-4 hover:underline',
+        sidebar:
+          'w-full justify-start border border-transparent text-muted-foreground hover:bg-accent hover:text-accent-foreground',
+        sidebarActive:
+          'w-full justify-start border border-border bg-secondary text-secondary-foreground shadow-sm hover:brightness-125',
       },
       size: {
         default: 'h-12 px-6 py-3',
