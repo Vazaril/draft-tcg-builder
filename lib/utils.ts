@@ -1,10 +1,15 @@
 import { clsx, type ClassValue } from 'clsx';
 import { twMerge } from 'tailwind-merge';
+import { redirect } from 'next/navigation';
 
 export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
 }
 
-// This check can be removed, it is just for tutorial purposes
-export const hasEnvVars =
-  process.env.NEXT_PUBLIC_SUPABASE_URL && process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY;
+export function encodedRedirect(
+  type: 'error' | 'success' | 'search' | 'assessment',
+  path: string,
+  message: string
+) {
+  return redirect(`${path}?${type}=${encodeURIComponent(message)}`);
+}
