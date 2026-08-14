@@ -18,7 +18,9 @@ export default function AuthLayout({ children }: { children: React.ReactNode }) 
           </div>
         </div>
       </SplitPageFormPane>
-      <SplitPageShowcasePane>
+      <SplitPageShowcasePane
+        className={'bg-gradient-to-br from-background via-background to-primary/5 p-6 md:p-8'}
+      >
         <div className="flex w-full max-w-lg flex-col gap-6">
           <Card>
             <CardHeader>

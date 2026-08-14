@@ -12,9 +12,7 @@ import { Switch } from '@/components/ui/switch';
 import { Label } from '@/components/ui/label';
 import { deleteCurrentUserAccount } from '@/app/auth/auth-service';
 
-interface DeleteAccountProps extends React.ComponentPropsWithoutRef<'div'> {}
-
-export function DeleteAccountForm({ className, ...props }: DeleteAccountProps) {
+export function DeleteAccountForm({ className, ...props }: React.ComponentPropsWithoutRef<'div'>) {
   const [deleteText, setDeleteText] = useState('');
   const [error, setError] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
@@ -77,7 +75,7 @@ export function DeleteAccountForm({ className, ...props }: DeleteAccountProps) {
   }
 
   return (
-    <div className={cn('flex flex-col gap-4', className)} {...props}>
+    <div className={cn('flex flex-col gap-6', className)} {...props}>
       <Card className="border-destructive/50">
         <CardHeader>
           <CardTitle className="text-2xl text-destructive">Danger Zone</CardTitle>
@@ -87,7 +85,7 @@ export function DeleteAccountForm({ className, ...props }: DeleteAccountProps) {
         </CardHeader>
         <CardContent>
           <form onSubmit={handleDelete} autoComplete="off">
-            <div className="flex flex-col gap-6">
+            <div className="flex flex-col gap-4">
               <div className="flex items-center space-x-4">
                 <Switch
                   id="enable-delete"
@@ -96,7 +94,7 @@ export function DeleteAccountForm({ className, ...props }: DeleteAccountProps) {
                 />
                 <Label
                   htmlFor="enable-delete"
-                  className="text-base leading-none cursor-pointer"
+                  className="text-foreground text-base leading-none cursor-pointer"
                 >
                   I understand the consequences, unlock{' '}
                   <strong className={'text-destructive'}>DELETION</strong>.

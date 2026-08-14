@@ -12,6 +12,7 @@ import { ProfileAvatar } from '@/components/profile-avatar';
 import { siteConfig } from '@/config/site';
 import { UpdateProfileForm } from '@/components/update-profile-form';
 import { DeleteAccountForm } from '@/components/delete-account-form';
+import { ChangePasswordForm } from '@/components/change-password-form';
 
 async function UserProfileData() {
   const supabase = await createClient();
@@ -25,12 +26,21 @@ async function UserProfileData() {
   const email = data.claims.user_metadata?.email || 'Unknown';
 
   return (
-    <div>
-      <div className="grid max-w-2xl gap-8">
+    <div className="flex w-full max-w-6xl flex-col gap-10">
+      <div>
         <ProfileAvatar username={username} />
       </div>
-      <UpdateProfileForm currentUsername={username} currentEmail={email} />
-      <DeleteAccountForm />
+
+      <div className="grid grid-cols-1 items-start gap-8 lg:grid-cols-2">
+        <UpdateProfileForm currentUsername={username} currentEmail={email} />
+        <ChangePasswordForm />
+      </div>
+
+      <div className="mt-4 border-t pt-8">
+        <div className="max-w-2xl">
+          <DeleteAccountForm />
+        </div>
+      </div>
     </div>
   );
 }

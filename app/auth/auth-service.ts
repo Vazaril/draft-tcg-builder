@@ -3,7 +3,6 @@
 import { createClient } from '@/lib/supabase/server';
 import { createClient as createAdminClient } from '@supabase/supabase-js';
 import { revalidatePath } from 'next/cache';
-import { UserAttributes } from '@supabase/supabase-js';
 
 export async function checkUsername(username: string) {
   if (username.trim().length > 6) {
@@ -71,6 +70,38 @@ export async function deleteCurrentUserAccount() {
   }
 
   revalidatePath('/');
+
+  return { success: true };
+}
+
+export async function verifyAndUpdatePassword(currentPassword: string, newPassword: string) {
+  const supabase = await createClient();
+
+  const {
+    data: { user },
+    error: userError,
+  } = await supabase.auth.getUser();
+
+  if (userError || !user || !user.email) {
+    return { error: new Error('You must be logged in to change your password.') };
+  }
+
+  const { error: signInError } = await supabase.auth.signInWithPassword({
+    email: user.email,
+    password: currentPassword,
+  });
+
+  if (signInError) {
+    return { error: new Error('The current password you entered is incorrect.') };
+  }
+
+  const { error: updateError } = await supabase.auth.updateUser({
+    password: newPassword,
+  });
+
+  if (updateError) {
+    return { error: updateError.message };
+  }
 
   return { success: true };
 }

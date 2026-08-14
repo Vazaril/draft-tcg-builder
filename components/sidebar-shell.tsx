@@ -33,7 +33,7 @@ export function SidebarShell({ sidebar, headerActions, children }: SidebarShellP
   }, []);
 
   return (
-    <div className="flex min-h-screen w-full overflow-hidden bg-background">
+    <div className="flex h-[100dvh] w-full overflow-hidden bg-background">
       {isOpen && (
         <div
           className="fixed inset-0 z-40 bg-black/80 md:hidden"
@@ -43,7 +43,7 @@ export function SidebarShell({ sidebar, headerActions, children }: SidebarShellP
 
       <div
         className={cn(
-          'fixed inset-y-0 left-0 z-50 transition-all duration-300 ease-in-out md:relative md:z-0',
+          'h-full fixed inset-y-0 left-0 z-50 transition-all duration-300 ease-in-out md:relative md:z-0',
           isOpen ? 'translate-x-0 md:ml-0' : '-translate-x-full md:-ml-64'
         )}
       >
@@ -65,7 +65,7 @@ export function SidebarShell({ sidebar, headerActions, children }: SidebarShellP
           <div className="flex items-center gap-4">{headerActions}</div>
         </header>
 
-        <main className="flex-1 overflow-y-auto p-6 md:p-8">
+        <main className="flex-1 overflow-y-auto bg-gradient-to-br from-background via-background to-primary/5 p-6 md:p-8">
           <div className="max-w-5xl">{children}</div>
         </main>
       </div>

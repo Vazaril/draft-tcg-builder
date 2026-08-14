@@ -5,12 +5,10 @@ import { createClient } from '@/lib/supabase/client';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
-import { useRouter } from 'next/navigation';
 import { useState, useEffect } from 'react';
-import { siteConfig } from '@/config/site';
 import * as React from 'react';
 import { checkUpdateUser } from '@/app/auth/auth-service';
-import { Switch} from '@/components/ui/switch'
+import { Switch } from '@/components/ui/switch';
 import { Label } from '@/components/ui/label';
 
 interface UpdateProfileProps extends React.ComponentPropsWithoutRef<'div'> {
@@ -30,7 +28,7 @@ export function UpdateProfileForm({
   const [isLoading, setIsLoading] = useState(false);
   const [isEditMode, setIsEditMode] = useState(false);
   const [isMounted, setIsMounted] = useState(false);
-  const router = useRouter();
+  const [success, setSuccess] = useState<string | null>(null);
 
   useEffect(() => {
     setIsMounted(true);
@@ -42,6 +40,7 @@ export function UpdateProfileForm({
       setUsername('');
       setEmail('');
       setError(null);
+      setSuccess(null);
     }
   };
 
@@ -53,6 +52,7 @@ export function UpdateProfileForm({
     const supabase = createClient();
     setIsLoading(true);
     setError(null);
+    setSuccess(null);
 
     try {
       const { checkError, userAttributes } = await checkUpdateUser(
@@ -65,12 +65,11 @@ export function UpdateProfileForm({
       if (userAttributes) {
         const { error } = await supabase.auth.updateUser(userAttributes);
         if (error) throw error;
-        // Update this route to redirect to an authenticated route. The user already has an active session.
-        router.push(siteConfig.logged_in_routing);
         setIsEditMode(false);
         setUsername('');
         setEmail('');
         setError(null);
+        setSuccess('Personal Info updated successfully!');
       }
     } catch (error: unknown) {
       setError(error instanceof Error ? error.message : 'An error occurred');
@@ -94,7 +93,7 @@ export function UpdateProfileForm({
   }
 
   return (
-    <div className={cn('flex flex-col gap-4', className)} {...props}>
+    <div className={cn('flex flex-col gap-6', className)} {...props}>
       <Card>
         <CardHeader>
           <CardTitle className="text-2xl">Update your Personal Info</CardTitle>
@@ -104,7 +103,7 @@ export function UpdateProfileForm({
         </CardHeader>
         <CardContent>
           <form onSubmit={handleUpdateUser}>
-            <div className="flex flex-col gap-6">
+            <div className="flex flex-col gap-4">
               <div className="flex items-center space-x-4">
                 <Switch
                   id="enable-edit"
@@ -134,8 +133,9 @@ export function UpdateProfileForm({
                 />
               </div>
               {error && <p className="text-sm text-red-500">{error}</p>}
+              {success && <p className="text-sm font-medium text-green-500">{success}</p>}
               <Button type="submit" className="w-full" disabled={isLoading || !isEditMode}>
-                {isLoading ? 'Updating...' : 'Update'}
+                {isLoading ? 'Updating...' : 'Update Personal Info'}
               </Button>
             </div>
           </form>

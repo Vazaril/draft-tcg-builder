@@ -14,7 +14,7 @@ export function ProfileAvatar({ username, avatarUrl, className, ...props }: Prof
     <div className={cn('flex flex-col gap-4', className)} {...props}>
       <div
         className={cn(
-          'flex h-32 w-32 shrink-0 items-center justify-center overflow-hidden',
+          'flex h-64 w-64 shrink-0 items-center justify-center overflow-hidden',
           'rounded-2xl border-2 border-primary bg-primary/10 text-primary',
           'shadow-[0_0_15px_hsl(var(--primary)/0.2)]'
         )}
