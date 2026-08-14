@@ -6,10 +6,12 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { useRouter } from 'next/navigation';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { siteConfig } from '@/config/site';
 import * as React from 'react';
 import { checkUpdateUser } from '@/app/auth/auth-service';
+import { Switch} from '@/components/ui/switch'
+import { Label } from '@/components/ui/label';
 
 interface UpdateProfileProps extends React.ComponentPropsWithoutRef<'div'> {
   currentUsername: string;
@@ -26,10 +28,28 @@ export function UpdateProfileForm({
   const [email, setEmail] = useState('');
   const [error, setError] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
+  const [isEditMode, setIsEditMode] = useState(false);
+  const [isMounted, setIsMounted] = useState(false);
   const router = useRouter();
+
+  useEffect(() => {
+    setIsMounted(true);
+  }, []);
+
+  const handleToggleEditMode = (checked: boolean) => {
+    setIsEditMode(checked);
+    if (!checked) {
+      setUsername('');
+      setEmail('');
+      setError(null);
+    }
+  };
 
   const handleUpdateUser = async (e: React.FormEvent) => {
     e.preventDefault();
+
+    if (!isEditMode) return;
+
     const supabase = createClient();
     setIsLoading(true);
     setError(null);
@@ -47,14 +67,32 @@ export function UpdateProfileForm({
         if (error) throw error;
         // Update this route to redirect to an authenticated route. The user already has an active session.
         router.push(siteConfig.logged_in_routing);
+        setIsEditMode(false);
+        setUsername('');
+        setEmail('');
+        setError(null);
       }
     } catch (error: unknown) {
-      //TODO FIX ERROR DISPLAY
       setError(error instanceof Error ? error.message : 'An error occurred');
     } finally {
       setIsLoading(false);
     }
   };
+
+  if (!isMounted) {
+    return (
+      <div className={cn('flex flex-col gap-4', className)} {...props}>
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-2xl">Update your Personal Info</CardTitle>
+            <CardDescription>Loading settings...</CardDescription>
+          </CardHeader>
+          <CardContent className="h-[250px]" />
+        </Card>
+      </div>
+    );
+  }
+
   return (
     <div className={cn('flex flex-col gap-4', className)} {...props}>
       <Card>
@@ -67,10 +105,21 @@ export function UpdateProfileForm({
         <CardContent>
           <form onSubmit={handleUpdateUser}>
             <div className="flex flex-col gap-6">
+              <div className="flex items-center space-x-4">
+                <Switch
+                  id="enable-edit"
+                  checked={isEditMode}
+                  onCheckedChange={handleToggleEditMode}
+                />
+                <Label htmlFor="confirm-update" className="text-base text-foreground leading-none">
+                  Enable Edit-Mode
+                </Label>
+              </div>
               <div className="grid gap-2">
                 <Input
                   id="username"
                   type="text"
+                  disabled={!isEditMode}
                   placeholder={currentUsername}
                   value={username}
                   onChange={(e) => setUsername(e.target.value)}
@@ -78,13 +127,14 @@ export function UpdateProfileForm({
                 <Input
                   id="email"
                   type="email"
+                  disabled={!isEditMode}
                   placeholder={currentEmail}
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                 />
               </div>
               {error && <p className="text-sm text-red-500">{error}</p>}
-              <Button type="submit" className="w-full" disabled={isLoading}>
+              <Button type="submit" className="w-full" disabled={isLoading || !isEditMode}>
                 {isLoading ? 'Updating...' : 'Update'}
               </Button>
             </div>

@@ -11,6 +11,7 @@ import {
 import { ProfileAvatar } from '@/components/profile-avatar';
 import { siteConfig } from '@/config/site';
 import { UpdateProfileForm } from '@/components/update-profile-form';
+import { DeleteAccountForm } from '@/components/delete-account-form';
 
 async function UserProfileData() {
   const supabase = await createClient();
@@ -29,6 +30,7 @@ async function UserProfileData() {
         <ProfileAvatar username={username} />
       </div>
       <UpdateProfileForm currentUsername={username} currentEmail={email} />
+      <DeleteAccountForm />
     </div>
   );
 }

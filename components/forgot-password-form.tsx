@@ -27,6 +27,8 @@ export function ForgotPasswordForm({ className, ...props }: React.ComponentProps
       });
       if (error) throw error;
       setSuccess(true);
+      setError(null);
+      setEmail('');
     } catch (error: unknown) {
       setError(error instanceof Error ? error.message : 'An error occurred');
     } finally {

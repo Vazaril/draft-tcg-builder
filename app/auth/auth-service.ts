@@ -1,12 +1,15 @@
 'use server';
 
+import { createClient } from '@/lib/supabase/server';
+import { createClient as createAdminClient } from '@supabase/supabase-js';
+import { revalidatePath } from 'next/cache';
 import { UserAttributes } from '@supabase/supabase-js';
 
 export async function checkUsername(username: string) {
-  if (username.length > 6) {
-    return { usernameError: 'Username cant be over 6 characters long' };
-  } else if (username.length < 3) {
-    return { usernameError: 'Username must be at least 3 characters long' };
+  if (username.trim().length > 6) {
+    return { usernameError: 'Username cant be over 6 characters long.' };
+  } else if (username.trim().length < 3) {
+    return { usernameError: 'Username must be at least 3 characters long.' };
   }
   return { usernameSuccess: true };
 }
@@ -17,20 +20,57 @@ export async function checkUpdateUser(
   newUsername: string,
   newEmail: string
 ) {
-  const userAttributes: UserAttributes = { email: '', data: { username: '' } };
+  const userAttributes: { email?: string; data?: { username: string } } = {};
 
-  if (currentUsername === newUsername) {
-    return { checkError: { message: 'Username needs to be different' } };
-  }
-  if (currentEmail === newEmail) {
-    return { checkError: { message: 'Email needs to be different' } };
-  }
-  if (newUsername.length > 0) {
-    userAttributes.data = { username: newUsername };
-  }
-  if (newEmail.length > 0) {
-    userAttributes.email = newEmail;
+  let hasChanges = false;
+
+  if (newUsername.trim().length > 0) {
+    if (newUsername.trim() === currentUsername) {
+      return { checkError: new Error('Username must be different from your current one.') };
+    }
+    userAttributes.data = { username: newUsername.trim() };
+    hasChanges = true;
   }
 
-  return { userAttributes: userAttributes };
+  if (newEmail.trim().length > 0) {
+    if (newEmail.trim() === currentEmail) {
+      return { checkError: new Error('Email must be different from your current one.') };
+    }
+    userAttributes.email = newEmail.trim();
+    hasChanges = true;
+  }
+
+  if (!hasChanges) {
+    return { checkError: new Error('Please enter a new username or email to update.') };
+  }
+
+  return { userAttributes };
+}
+
+export async function deleteCurrentUserAccount() {
+  const supabase = await createClient();
+
+  const {
+    data: { user },
+    error: authError,
+  } = await supabase.auth.getUser();
+
+  if (authError || !user) {
+    return { error: new Error('You must be logged in to delete your account.') };
+  }
+
+  const supabaseAdmin = createAdminClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.SUPABASE_SERVICE_ROLE_KEY!
+  );
+
+  const { error: deleteError } = await supabaseAdmin.auth.admin.deleteUser(user.id);
+
+  if (deleteError) {
+    return { error: new Error('Failed to delete account') };
+  }
+
+  revalidatePath('/');
+
+  return { success: true };
 }
