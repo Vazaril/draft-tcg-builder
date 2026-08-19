@@ -2,6 +2,7 @@
 
 import { Check, Pencil, Share2 } from 'lucide-react';
 
+import { DeckDeleteButton } from '@/components/deck-detail/deck-delete-button';
 import { GoalChips } from '@/components/deck-detail/goal-chips';
 import { Button } from '@/components/ui/button';
 import type { DeckDetail } from '@/lib/deck-detail';
@@ -44,6 +45,8 @@ export function DeckHeader({
             <Share2 />
             Teilen
           </Button>
+
+          <DeckDeleteButton deckId={deck.id} deckName={deck.name} />
         </div>
       </div>
 
