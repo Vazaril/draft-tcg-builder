@@ -7,6 +7,7 @@ import { GoalChips } from '@/components/deck-detail/goal-chips';
 import { Button } from '@/components/ui/button';
 import type { DeckDetail } from '@/lib/deck-detail';
 import type { Deck } from '@/lib/mock-decks';
+import { DeckShareButton } from '@/components/deck-detail/deck-share-button';
 
 export function DeckHeader({
   deck,
@@ -41,10 +42,7 @@ export function DeckHeader({
             {isEditing ? 'Fertig' : 'Bearbeiten'}
           </Button>
 
-          <Button type="button" variant="outline" size="sm">
-            <Share2 />
-            Teilen
-          </Button>
+          <DeckShareButton deckName={deck.name} entries={detail.cardlist} />
 
           <DeckDeleteButton deckId={deck.id} deckName={deck.name} />
         </div>

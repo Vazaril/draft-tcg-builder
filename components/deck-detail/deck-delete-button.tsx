@@ -2,51 +2,36 @@
 
 import { Trash2 } from 'lucide-react';
 
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-  AlertDialogTrigger,
-} from '@/components/ui/alert-dialog';
+import { ActionDialog } from '@/components/ui/action-dialog';
 import { Button } from '@/components/ui/button';
 
 export function DeckDeleteButton({ deckId, deckName }: { deckId: string; deckName: string }) {
   function handleDeleteDeck() {
     console.log('Deck löschen:', deckId);
-
-    // Hier kommt später deine Server Action rein.
   }
 
   return (
-    <AlertDialog>
-      <AlertDialogTrigger asChild>
+    <ActionDialog
+      trigger={
         <Button type="button" variant="destructive" size="sm">
           <Trash2 />
           Deck löschen
         </Button>
-      </AlertDialogTrigger>
+      }
+      title="Deck wirklich löschen?"
+      description={`Möchtest du das Deck „${deckName}“ wirklich löschen? Diese Aktion kann nicht rückgängig gemacht werden.`}
+      showCancel={false}
+    >
+      <div className="flex justify-end gap-2">
+        <Button type="button" variant="outline">
+          Abbrechen
+        </Button>
 
-      <AlertDialogContent>
-        <AlertDialogHeader>
-          <AlertDialogTitle>Deck wirklich löschen?</AlertDialogTitle>
-
-          <AlertDialogDescription>
-            Möchtest du das Deck „{deckName}“ wirklich löschen? Diese Aktion kann nicht rückgängig
-            gemacht werden.
-          </AlertDialogDescription>
-        </AlertDialogHeader>
-
-        <AlertDialogFooter>
-          <AlertDialogCancel>Abbrechen</AlertDialogCancel>
-
-          <AlertDialogAction onClick={handleDeleteDeck}>Deck löschen</AlertDialogAction>
-        </AlertDialogFooter>
-      </AlertDialogContent>
-    </AlertDialog>
+        <Button type="button" variant="destructive" onClick={handleDeleteDeck}>
+          <Trash2 />
+          Deck löschen
+        </Button>
+      </div>
+    </ActionDialog>
   );
 }
