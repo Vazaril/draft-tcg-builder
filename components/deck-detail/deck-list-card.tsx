@@ -125,6 +125,20 @@ export function DeckListCard({
     });
   }
 
+  /*
+  function handleExplainCard(id: string) {
+    const entry = byId[id];
+
+    const message = `Erkläre mir, warum ${entry.name} in diesem Deck enthalten ist.`;
+
+    console.log(message);
+
+    // später z. B.:
+    // sendMessageToChat(message);
+  }
+
+   */
+
   return (
     <Card>
       <CardHeader>
