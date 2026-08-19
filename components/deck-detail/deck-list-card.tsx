@@ -131,8 +131,7 @@ export function DeckListCard({
 
     const message = `Erkläre mir, warum ${entry.name} in diesem Deck enthalten ist.`;
 
-    console.log(message);
-
+    return message;
     // später z. B.:
     // sendMessageToChat(message);
   }
