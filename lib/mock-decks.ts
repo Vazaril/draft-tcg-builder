@@ -33,7 +33,7 @@ export const mockDecks: Deck[] = [
     game: 'Pokemon',
     format: 'Expanded',
     tags: ['Entwurf', 'Budget'],
-    accent: 'accent',
+    accent: 'primary',
   },
   {
     id: 'goblin-sprint',
@@ -41,6 +41,6 @@ export const mockDecks: Deck[] = [
     game: 'Magic',
     format: 'Pioneer',
     tags: ['Turnier-legal', 'Aggro'],
-    accent: 'muted',
+    accent: 'primary',
   },
 ];
