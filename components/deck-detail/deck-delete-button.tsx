@@ -20,13 +20,9 @@ export function DeckDeleteButton({ deckId, deckName }: { deckId: string; deckNam
       }
       title="Deck wirklich löschen?"
       description={`Möchtest du das Deck „${deckName}“ wirklich löschen? Diese Aktion kann nicht rückgängig gemacht werden.`}
-      showCancel={false}
+      showCancel
     >
-      <div className="flex justify-end gap-2">
-        <Button type="button" variant="outline">
-          Abbrechen
-        </Button>
-
+      <div className="flex justify-end">
         <Button type="button" variant="destructive" onClick={handleDeleteDeck}>
           <Trash2 />
           Deck löschen
