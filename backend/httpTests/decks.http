@@ -111,3 +111,15 @@ Content-Type: application/json
 {
   "name": "Test Deck"
 }
+
+### 8. Karte hinzufügen
+POST {{baseUrl}}/api/decks/{{deckId}}/cards
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "card_id": "9f2da581-bb19-43d2-b202-4eeda2fa29d7",
+  "quantity": 3,
+  "position": 3,
+  "reasoning": "Trainerkarte zur Unterstützung der Deckstrategie."
+}
