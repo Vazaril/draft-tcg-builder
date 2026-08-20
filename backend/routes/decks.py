@@ -52,7 +52,13 @@ def list_decks():
         response = (
             supabase
             .table("decks")
-            .select("*")
+            .select("""
+                *,
+                games (
+                    id,
+                   name
+                )
+            """)
             .order("updated_at", desc=True)
             .execute()
         )
@@ -81,7 +87,13 @@ def get_deck(deck_id):
         deck_response = (
             supabase
             .table("decks")
-            .select("*")
+            .select("""
+        *,
+        games (
+            id,
+            name
+        )
+    """)
             .eq("id", deck_id)
             .maybe_single()
             .execute()
