@@ -294,3 +294,186 @@ def bulk_delete_deck_cards(deck_id):
         result.pop("status", None)
 
     return jsonify(results=results), 207 if has_errors else 200
+
+@decks_bp.post("/<deck_id>/cards")
+def add_deck_card(deck_id):
+    """
+    Fügt eine Karte zum Deck hinzu.
+
+    Body:
+    {
+        "card_id": "...",
+        "quantity": 1,
+        "position": 3,
+        "reasoning": "..."
+    }
+
+    Falls die Karte bereits im Deck existiert,
+    wird quantity erhöht.
+    """
+
+    supabase = get_supabase()
+
+    if not supabase:
+        return jsonify(message="Unauthorized"), 401
+
+    body = request.get_json(silent=True) or {}
+
+    card_id = body.get("card_id")
+    quantity = body.get("quantity", 1)
+    position = body.get("position")
+    reasoning = body.get("reasoning")
+
+    if not card_id:
+        return jsonify(message="card_id fehlt."), 400
+
+    if not isinstance(quantity, int) or quantity <= 0:
+        return jsonify(
+            message="quantity muss eine ganze Zahl größer als 0 sein."
+        ), 400
+
+    try:
+        # Prüfen, ob Deck existiert
+        deck_response = (
+            supabase
+            .table("decks")
+            .select("id")
+            .eq("id", deck_id)
+            .limit(1)
+            .execute()
+        )
+
+        deck_rows = deck_response.data or []
+
+        if not deck_rows:
+            return jsonify(message="Deck nicht gefunden."), 404
+
+        # Prüfen, ob Karte existiert
+        pokemon_card_response = (
+            supabase
+            .table("pokemon_cards")
+            .select("""
+                id,
+                name,
+                card_type,
+                subtype,
+                regulation_mark
+            """)
+            .eq("id", card_id)
+            .limit(1)
+            .execute()
+        )
+
+        pokemon_card_rows = pokemon_card_response.data or []
+
+        if not pokemon_card_rows:
+            return jsonify(message="Pokémon-Karte nicht gefunden."), 404
+
+        # Prüfen, ob diese Karte bereits im Deck ist
+        existing_response = (
+            supabase
+            .table("pokemon_deck_cards")
+            .select("""
+                id,
+                card_id,
+                quantity,
+                position,
+                reasoning
+            """)
+            .eq("deck_id", deck_id)
+            .eq("card_id", card_id)
+            .limit(1)
+            .execute()
+        )
+
+        existing_rows = existing_response.data or []
+
+        # Karte existiert schon -> quantity erhöhen
+        if existing_rows:
+            existing_card = existing_rows[0]
+
+            new_quantity = existing_card["quantity"] + quantity
+
+            update_data = {
+                "quantity": new_quantity
+            }
+
+            # Optional neue Werte übernehmen
+            if position is not None:
+                update_data["position"] = position
+
+            if reasoning is not None:
+                update_data["reasoning"] = reasoning
+
+            update_response = (
+                supabase
+                .table("pokemon_deck_cards")
+                .update(update_data)
+                .eq("id", existing_card["id"])
+                .execute()
+            )
+
+            deck_card_id = existing_card["id"]
+
+        else:
+            # Karte ist noch nicht im Deck -> neu anlegen
+            insert_response = (
+                supabase
+                .table("pokemon_deck_cards")
+                .insert({
+                    "deck_id": deck_id,
+                    "card_id": card_id,
+                    "quantity": quantity,
+                    "position": position,
+                    "reasoning": reasoning
+                })
+                .execute()
+            )
+
+            inserted_rows = insert_response.data or []
+
+            if not inserted_rows:
+                return jsonify(
+                    message="Karte konnte nicht hinzugefügt werden."
+                ), 500
+
+            deck_card_id = inserted_rows[0]["id"]
+
+        # Ergebnis inklusive pokemon_cards laden
+        card_response = (
+            supabase
+            .table("pokemon_deck_cards")
+            .select("""
+                id,
+                card_id,
+                quantity,
+                position,
+                reasoning,
+                pokemon_cards (
+                    id,
+                    name,
+                    card_type,
+                    subtype,
+                    regulation_mark
+                )
+            """)
+            .eq("id", deck_card_id)
+            .limit(1)
+            .execute()
+        )
+
+        card_rows = card_response.data or []
+
+        if not card_rows:
+            return jsonify(
+                message="Karte konnte nach dem Speichern nicht geladen werden."
+            ), 500
+
+        return jsonify(card_rows[0]), 200 if existing_rows else 201
+
+    except Exception as error:
+        print("Fehler beim Hinzufügen der Karte:", error)
+
+        return jsonify(
+            message="Karte konnte nicht hinzugefügt werden."
+        ), 500
