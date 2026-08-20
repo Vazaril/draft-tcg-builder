@@ -149,10 +149,63 @@ def create_deck():
     return jsonify(message="not implemented"), 501
 
 
+def _delete_or_reduce_card(supabase, deck_id, card_id, amount):
+    """
+    Löscht eine einzelne Karte komplett oder reduziert ihre Anzahl.
+    Gemeinsam genutzt vom Einzel- und vom Bulk-Delete-Endpoint.
+
+    Gibt ein dict zurück — KEINE Flask-Response! Bei Fehlern enthält das
+    dict "error" (Text) und "status" (HTTP-Statuscode für den Fall, dass
+    dieser Aufruf einzeln beantwortet wird).
+    """
+
+    # Bewusst .limit(1) statt .maybe_single(): maybe_single() gibt in
+    # manchen supabase-py-Versionen bei 0 Treffern None als GESAMTE
+    # Response zurück (statt response.data = None), was beim Zugriff
+    # auf .data zu 'NoneType' object has no attribute 'data' crasht.
+    card_response = (
+        supabase
+        .table("pokemon_deck_cards")
+        .select("id, quantity")
+        .eq("id", card_id)
+        .eq("deck_id", deck_id)
+        .limit(1)
+        .execute()
+    )
+
+    rows = card_response.data or []
+
+    if not rows:
+        return {"card_id": card_id, "error": "Karte nicht gefunden.", "status": 404}
+
+    card = rows[0]
+
+    current_quantity = card["quantity"]
+    amount_to_remove = amount if amount is not None else current_quantity
+
+    if amount_to_remove <= 0:
+        return {"card_id": card_id, "error": "amount muss größer als 0 sein.", "status": 400}
+
+    if amount_to_remove >= current_quantity:
+        # Karte komplett entfernen
+        supabase.table("pokemon_deck_cards").delete().eq("id", card_id).execute()
+
+        return {"card_id": card_id, "deleted": True, "remaining_quantity": 0}
+
+    # Nur die Anzahl verringern
+    new_quantity = current_quantity - amount_to_remove
+
+    supabase.table("pokemon_deck_cards").update(
+        {"quantity": new_quantity}
+    ).eq("id", card_id).execute()
+
+    return {"card_id": card_id, "deleted": False, "remaining_quantity": new_quantity}
+
+
 @decks_bp.delete("/<deck_id>/cards/<card_id>")
 def delete_deck_card(deck_id, card_id):
     """
-    Entfernt eine Karte aus dem Deck.
+    Entfernt eine einzelne Karte aus dem Deck.
 
     Ohne Query-Parameter 'amount' (oder amount >= aktueller Anzahl) wird die
     Karte komplett entfernt. Mit 'amount' < aktueller Anzahl wird nur die
@@ -170,51 +223,12 @@ def delete_deck_card(deck_id, card_id):
     try:
         amount = request.args.get("amount", type=int)
 
-        # Aktuelle Karte laden, um die vorhandene Anzahl zu kennen.
-        # .eq("deck_id", deck_id) stellt zusätzlich sicher, dass die Karte
-        # wirklich zu diesem Deck gehört.
-        #
-        # Bewusst .limit(1) statt .maybe_single(): maybe_single() gibt in
-        # manchen supabase-py-Versionen bei 0 Treffern None als GESAMTE
-        # Response zurück (statt response.data = None), was beim Zugriff
-        # auf .data zu 'NoneType' object has no attribute 'data' crasht.
-        card_response = (
-            supabase
-            .table("pokemon_deck_cards")
-            .select("id, quantity")
-            .eq("id", card_id)
-            .eq("deck_id", deck_id)
-            .limit(1)
-            .execute()
-        )
+        result = _delete_or_reduce_card(supabase, deck_id, card_id, amount)
 
-        rows = card_response.data or []
+        if "error" in result:
+            return jsonify(message=result["error"]), result["status"]
 
-        if not rows:
-            return jsonify(message="Karte nicht gefunden."), 404
-
-        card = rows[0]
-
-        current_quantity = card["quantity"]
-        amount_to_remove = amount if amount is not None else current_quantity
-
-        if amount_to_remove <= 0:
-            return jsonify(message="amount muss größer als 0 sein."), 400
-
-        if amount_to_remove >= current_quantity:
-            # Karte komplett entfernen
-            supabase.table("pokemon_deck_cards").delete().eq("id", card_id).execute()
-
-            return jsonify(deleted=True, remaining_quantity=0), 200
-
-        # Nur die Anzahl verringern
-        new_quantity = current_quantity - amount_to_remove
-
-        supabase.table("pokemon_deck_cards").update(
-            {"quantity": new_quantity}
-        ).eq("id", card_id).execute()
-
-        return jsonify(deleted=False, remaining_quantity=new_quantity), 200
+        return jsonify(deleted=result["deleted"], remaining_quantity=result["remaining_quantity"]), 200
 
     except Exception as error:
         print("Fehler beim Löschen der Karte:", error)
@@ -222,3 +236,61 @@ def delete_deck_card(deck_id, card_id):
         return jsonify(
             message="Karte konnte nicht gelöscht werden."
         ), 500
+
+
+@decks_bp.post("/<deck_id>/cards/bulk-delete")
+def bulk_delete_deck_cards(deck_id):
+    """
+    Entfernt mehrere Karten gleichzeitig (oder reduziert ihre Anzahl) —
+    ein Request statt N einzelner DELETE-Aufrufe.
+
+    Body:
+    {
+      "cards": [
+        { "card_id": "...", "amount": 2 },
+        { "card_id": "..." }
+      ]
+    }
+
+    Ohne "amount" pro Eintrag wird die jeweilige Karte komplett entfernt.
+    Antwortet mit 200, wenn alles geklappt hat, sonst mit 207 (Multi-Status)
+    und pro Karte einem eigenen Ergebnis/Fehler in "results".
+    """
+
+    supabase = get_supabase()
+
+    if not supabase:
+        return jsonify(message="Unauthorized"), 401
+
+    body = request.get_json(silent=True) or {}
+    cards_to_delete = body.get("cards")
+
+    if not isinstance(cards_to_delete, list) or not cards_to_delete:
+        return jsonify(message="'cards' muss eine nicht-leere Liste sein."), 400
+
+    results = []
+
+    for entry in cards_to_delete:
+        card_id = entry.get("card_id") if isinstance(entry, dict) else None
+        amount = entry.get("amount") if isinstance(entry, dict) else None
+
+        if not card_id:
+            results.append({"card_id": card_id, "error": "card_id fehlt.", "status": 400})
+            continue
+
+        try:
+            results.append(_delete_or_reduce_card(supabase, deck_id, card_id, amount))
+        except Exception as error:
+            print(f"Fehler beim Löschen der Karte {card_id}:", error)
+            results.append(
+                {"card_id": card_id, "error": "Karte konnte nicht gelöscht werden.", "status": 500}
+            )
+
+    has_errors = any("error" in result for result in results)
+
+    # "status" war nur intern für einzelne Fehler-Antworten relevant,
+    # nicht Teil der öffentlichen Response.
+    for result in results:
+        result.pop("status", None)
+
+    return jsonify(results=results), 207 if has_errors else 200

@@ -2,7 +2,9 @@
 @deckId = e2d163fc-efc8-4aea-9255-b10db9594a5e
 # Achtung: das ist die "id" der pokemon_deck_cards-Zeile aus der Deck-Response
 # (NICHT das "card_id"-Feld — das zeigt auf pokemon_cards.id und ist eine andere ID!)
-@deckCardId = b052ca1f-737c-4f20-a225-a4198267fdc4
+@deckCardId = 6f4f008b-63ac-4e50-afd3-94b3fd23e312
+# zweite Karte für den Bulk-Test — hier: Miraidon
+@deckCardId2 = 34838c53-3398-45cc-94aa-9582b92ef6d8
 
 
 ### 0. Login über Supabase, um einen echten Access Token zu bekommen.
@@ -47,6 +49,54 @@ Authorization: Bearer {{token}}
 ### 5. Fehlerfall: nicht existierende Karte löschen -> erwartet 404
 DELETE {{baseUrl}}/api/decks/{{deckId}}/cards/00000000-0000-0000-0000-000000000000
 Authorization: Bearer {{token}}
+
+
+### 5b. Zwei unterschiedliche Karten gleichzeitig löschen, jede mit eigener Menge
+# Pikachu (deckCardId): 2 Kopien löschen, Rest bleibt im Deck
+# Miraidon (deckCardId2): 1 Kopie löschen, Rest bleibt im Deck
+POST {{baseUrl}}/api/decks/{{deckId}}/cards/bulk-delete
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "cards": [
+    { "card_id": "{{deckCardId}}", "amount": 2 },
+    { "card_id": "{{deckCardId2}}", "amount": 1 }
+  ]
+}
+
+> {%
+  client.test("Status ist 200", function () {
+    client.assert(response.status === 200, "Erwartet 200, bekommen " + response.status);
+  });
+
+  client.test("Beide Karten wurden ohne Fehler verarbeitet", function () {
+    const results = response.body.results;
+    client.assert(results.length === 2, "Erwartet 2 Ergebnisse, bekommen " + results.length);
+    results.forEach(function (result) {
+      client.assert(!result.error, "Karte " + result.card_id + " hat einen Fehler: " + result.error);
+    });
+  });
+%}
+
+
+### 5c. Bulk-Delete mit einer ungültigen ID dazwischen -> erwartet 207, results zeigt pro Karte den Status
+POST {{baseUrl}}/api/decks/{{deckId}}/cards/bulk-delete
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "cards": [
+    { "card_id": "{{deckCardId}}", "amount": 1 },
+    { "card_id": "00000000-0000-0000-0000-000000000000" }
+  ]
+}
+
+> {%
+  client.test("Status ist 207 (teilweise fehlgeschlagen)", function () {
+    client.assert(response.status === 207, "Erwartet 207, bekommen " + response.status);
+  });
+%}
 
 
 ### 6. Fehlerfall: ohne Token -> erwartet 401
