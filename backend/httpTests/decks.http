@@ -1,0 +1,63 @@
+### deckId/deckCardId ändern sich pro Test-Lauf, deshalb hier inline statt in der Env-Datei
+@deckId = e2d163fc-efc8-4aea-9255-b10db9594a5e
+# Achtung: das ist die "id" der pokemon_deck_cards-Zeile aus der Deck-Response
+# (NICHT das "card_id"-Feld — das zeigt auf pokemon_cards.id und ist eine andere ID!)
+@deckCardId = b052ca1f-737c-4f20-a225-a4198267fdc4
+
+
+### 0. Login über Supabase, um einen echten Access Token zu bekommen.
+# Einmal ausführen — der Token wird danach automatisch in {{token}}
+# für alle folgenden Requests gespeichert (siehe Script unten).
+# @name login
+POST {{supabaseUrl}}/auth/v1/token?grant_type=password
+apikey: {{supabaseAnonKey}}
+Content-Type: application/json
+
+{
+  "email": "{{email}}",
+  "password": "{{password}}"
+}
+
+> {%
+  client.global.set("token", response.body.access_token);
+  client.log("Token gespeichert: " + response.body.access_token.substring(0, 20) + "...");
+%}
+
+
+### 1. Alle Decks des eingeloggten Users
+GET {{baseUrl}}/api/decks
+Authorization: Bearer {{token}}
+
+
+### 2. Einzelnes Deck inkl. Karten
+GET {{baseUrl}}/api/decks/{{deckId}}
+Authorization: Bearer {{token}}
+
+
+### 3. Karte komplett löschen (kein amount-Parameter = volle Menge)
+DELETE {{baseUrl}}/api/decks/{{deckId}}/cards/{{deckCardId}}
+Authorization: Bearer {{token}}
+
+
+### 4. Nur 2 Kopien einer Karte löschen (Anzahl wird reduziert, Karte bleibt)
+DELETE {{baseUrl}}/api/decks/{{deckId}}/cards/{{deckCardId}}?amount=2
+Authorization: Bearer {{token}}
+
+
+### 5. Fehlerfall: nicht existierende Karte löschen -> erwartet 404
+DELETE {{baseUrl}}/api/decks/{{deckId}}/cards/00000000-0000-0000-0000-000000000000
+Authorization: Bearer {{token}}
+
+
+### 6. Fehlerfall: ohne Token -> erwartet 401
+GET {{baseUrl}}/api/decks
+
+
+### 7. Deck erstellen (aktuell not implemented -> erwartet 501)
+POST {{baseUrl}}/api/decks
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "name": "Test Deck"
+}
