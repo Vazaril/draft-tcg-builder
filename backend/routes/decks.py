@@ -5,7 +5,6 @@ from dotenv import load_dotenv
 from flask import Blueprint, jsonify, request
 from supabase import create_client
 
-
 # .env.local laden
 env_path = Path(__file__).resolve().parents[2] / ".env.local"
 load_dotenv(env_path)
@@ -66,8 +65,6 @@ def list_decks():
         return jsonify(response.data), 200
 
     except Exception as error:
-        print("Fehler beim Laden der Decks:", error)
-
         return jsonify(
             message="Decks konnten nicht geladen werden."
         ), 500
@@ -83,8 +80,6 @@ def get_deck(deck_id):
         return jsonify(message="Unauthorized"), 401
 
     try:
-        # Bewusst .limit(1) statt .maybe_single() — siehe Kommentar in
-        # delete_deck_card() weiter unten für den Grund.
         deck_response = (
             supabase
             .table("decks")
@@ -133,12 +128,9 @@ def get_deck(deck_id):
         )
 
         deck["cards"] = cards_response.data or []
-
         return jsonify(deck), 200
 
     except Exception as error:
-        print("Fehler beim Laden des Decks:", error)
-
         return jsonify(
             message="Deck konnte nicht geladen werden."
         ), 500
@@ -147,60 +139,6 @@ def get_deck(deck_id):
 @decks_bp.post("")
 def create_deck():
     return jsonify(message="not implemented"), 501
-
-
-def _delete_or_reduce_card(supabase, deck_id, card_id, amount):
-    """
-    Löscht eine einzelne Karte komplett oder reduziert ihre Anzahl.
-    Gemeinsam genutzt vom Einzel- und vom Bulk-Delete-Endpoint.
-
-    Gibt ein dict zurück — KEINE Flask-Response! Bei Fehlern enthält das
-    dict "error" (Text) und "status" (HTTP-Statuscode für den Fall, dass
-    dieser Aufruf einzeln beantwortet wird).
-    """
-
-    # Bewusst .limit(1) statt .maybe_single(): maybe_single() gibt in
-    # manchen supabase-py-Versionen bei 0 Treffern None als GESAMTE
-    # Response zurück (statt response.data = None), was beim Zugriff
-    # auf .data zu 'NoneType' object has no attribute 'data' crasht.
-    card_response = (
-        supabase
-        .table("pokemon_deck_cards")
-        .select("id, quantity")
-        .eq("id", card_id)
-        .eq("deck_id", deck_id)
-        .limit(1)
-        .execute()
-    )
-
-    rows = card_response.data or []
-
-    if not rows:
-        return {"card_id": card_id, "error": "Karte nicht gefunden.", "status": 404}
-
-    card = rows[0]
-
-    current_quantity = card["quantity"]
-    amount_to_remove = amount if amount is not None else current_quantity
-
-    if amount_to_remove <= 0:
-        return {"card_id": card_id, "error": "amount muss größer als 0 sein.", "status": 400}
-
-    if amount_to_remove >= current_quantity:
-        # Karte komplett entfernen
-        supabase.table("pokemon_deck_cards").delete().eq("id", card_id).execute()
-
-        return {"card_id": card_id, "deleted": True, "remaining_quantity": 0}
-
-    # Nur die Anzahl verringern
-    new_quantity = current_quantity - amount_to_remove
-
-    supabase.table("pokemon_deck_cards").update(
-        {"quantity": new_quantity}
-    ).eq("id", card_id).execute()
-
-    return {"card_id": card_id, "deleted": False, "remaining_quantity": new_quantity}
-
 
 @decks_bp.delete("/<deck_id>/cards/<card_id>")
 def delete_deck_card(deck_id, card_id):
@@ -288,12 +226,8 @@ def bulk_delete_deck_cards(deck_id):
 
     has_errors = any("error" in result for result in results)
 
-    # "status" war nur intern für einzelne Fehler-Antworten relevant,
-    # nicht Teil der öffentlichen Response.
-    for result in results:
-        result.pop("status", None)
-
     return jsonify(results=results), 207 if has_errors else 200
+
 
 @decks_bp.post("/<deck_id>/cards")
 def add_deck_card(deck_id):
@@ -477,3 +411,52 @@ def add_deck_card(deck_id):
         return jsonify(
             message="Karte konnte nicht hinzugefügt werden."
         ), 500
+
+
+
+def _delete_or_reduce_card(supabase, deck_id, card_id, amount):
+    """
+    Löscht eine einzelne Karte komplett oder reduziert ihre Anzahl.
+    Gemeinsam genutzt vom Einzel- und vom Bulk-Delete-Endpoint.
+
+    Gibt ein dict zurück — KEINE Flask-Response! Bei Fehlern enthält das
+    dict "error" (Text) und "status" (HTTP-Statuscode für den Fall, dass
+    dieser Aufruf einzeln beantwortet wird).
+    """
+    card_response = (
+        supabase
+        .table("pokemon_deck_cards")
+        .select("id, quantity")
+        .eq("id", card_id)
+        .eq("deck_id", deck_id)
+        .limit(1)
+        .execute()
+    )
+
+    rows = card_response.data or []
+
+    if not rows:
+        return {"card_id": card_id, "error": "Karte nicht gefunden.", "status": 404}
+
+    card = rows[0]
+
+    current_quantity = card["quantity"]
+    amount_to_remove = amount if amount is not None else current_quantity
+
+    if amount_to_remove <= 0:
+        return {"card_id": card_id, "error": "amount muss größer als 0 sein.", "status": 400}
+
+    if amount_to_remove >= current_quantity:
+        # Karte komplett entfernen
+        supabase.table("pokemon_deck_cards").delete().eq("id", card_id).execute()
+
+        return {"card_id": card_id, "deleted": True, "remaining_quantity": 0}
+
+    # Nur die Anzahl verringern
+    new_quantity = current_quantity - amount_to_remove
+
+    supabase.table("pokemon_deck_cards").update(
+        {"quantity": new_quantity}
+    ).eq("id", card_id).execute()
+
+    return {"card_id": card_id, "deleted": False, "remaining_quantity": new_quantity}
