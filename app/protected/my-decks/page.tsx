@@ -10,18 +10,19 @@ import {
   PageShell,
   PageTitle,
 } from '@/components/ui/page-shell';
-import { mockDecks } from '@/lib/mock-decks';
+import { getUserDecks } from '@/lib/api/decks';
 
-export default function DecksPage() {
+export default async function DecksPage() {
+  const decks = await getUserDecks();
+
   return (
     <PageShell>
       <PageHeader>
         <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
           <div>
             <PageTitle>Meine Decks</PageTitle>
-            <PageDescription>
-              {mockDecks.length} gespeichert
-            </PageDescription>
+
+            <PageDescription>{decks.length} gespeichert</PageDescription>
           </div>
 
           <div className="flex shrink-0 gap-3">
@@ -29,6 +30,7 @@ export default function DecksPage() {
               <Upload />
               Import
             </Button>
+
             <Button size="sm">
               <Plus />
               Neues Deck
@@ -39,9 +41,10 @@ export default function DecksPage() {
 
       <PageContent>
         <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-4">
-          {mockDecks.map((deck) => (
+          {decks.map((deck) => (
             <DeckCard key={deck.id} deck={deck} />
           ))}
+
           <AddDeckCard />
         </div>
       </PageContent>

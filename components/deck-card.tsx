@@ -2,7 +2,7 @@ import Link from 'next/link';
 
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent } from '@/components/ui/card';
-import type { Deck, DeckAccent } from '@/lib/mock-decks';
+import type { Deck, DeckAccent } from '@/lib/api/decks';
 
 // Semantic-token-only gradients — no raw Tailwind colors (bg-blue-500 etc.),
 // per the "Semantic Theming" rule in the dev style guide.
