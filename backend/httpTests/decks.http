@@ -2,7 +2,7 @@
 @deckId = e2d163fc-efc8-4aea-9255-b10db9594a5e
 # Achtung: das ist die "id" der pokemon_deck_cards-Zeile aus der Deck-Response
 # (NICHT das "card_id"-Feld — das zeigt auf pokemon_cards.id und ist eine andere ID!)
-@deckCardId = 6f4f008b-63ac-4e50-afd3-94b3fd23e312
+@deckCardId = 9f2da581-bb19-43d2-b202-4eeda2fa29d7
 # zweite Karte für den Bulk-Test — hier: Miraidon
 @deckCardId2 = 34838c53-3398-45cc-94aa-9582b92ef6d8
 
@@ -36,22 +36,46 @@ GET {{baseUrl}}/api/decks/{{deckId}}
 Authorization: Bearer {{token}}
 
 
-### 3. Karte komplett löschen (kein amount-Parameter = volle Menge)
+### 3. Karte hinzufügen
+POST {{baseUrl}}/api/decks/{{deckId}}/cards
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "card_id": "9f2da581-bb19-43d2-b202-4eeda2fa29d7",
+  "quantity": 3,
+  "position": 3,
+  "reasoning": "Trainerkarte zur Unterstützung der Deckstrategie."
+}
+
+### 3b. Karte hinzufügen damit der Bulck löschen immer funktioniert
+POST {{baseUrl}}/api/decks/{{deckId}}/cards
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "card_id": "34838c53-3398-45cc-94aa-9582b92ef6d8",
+  "quantity": 3,
+  "position": 3,
+  "reasoning": "Trainerkarte zur Unterstützung der Deckstrategie."
+}
+
+### 4. Karte komplett löschen (kein amount-Parameter = volle Menge)
 DELETE {{baseUrl}}/api/decks/{{deckId}}/cards/{{deckCardId}}
 Authorization: Bearer {{token}}
 
 
-### 4. Nur 2 Kopien einer Karte löschen (Anzahl wird reduziert, Karte bleibt)
+### 5. Nur 2 Kopien einer Karte löschen (Anzahl wird reduziert, Karte bleibt)
 DELETE {{baseUrl}}/api/decks/{{deckId}}/cards/{{deckCardId}}?amount=2
 Authorization: Bearer {{token}}
 
 
-### 5. Fehlerfall: nicht existierende Karte löschen -> erwartet 404
+### 6. Fehlerfall: nicht existierende Karte löschen -> erwartet 404
 DELETE {{baseUrl}}/api/decks/{{deckId}}/cards/00000000-0000-0000-0000-000000000000
 Authorization: Bearer {{token}}
 
 
-### 5b. Zwei unterschiedliche Karten gleichzeitig löschen, jede mit eigener Menge
+### 6b. Zwei unterschiedliche Karten gleichzeitig löschen, jede mit eigener Menge
 # Pikachu (deckCardId): 2 Kopien löschen, Rest bleibt im Deck
 # Miraidon (deckCardId2): 1 Kopie löschen, Rest bleibt im Deck
 POST {{baseUrl}}/api/decks/{{deckId}}/cards/bulk-delete
@@ -80,7 +104,7 @@ Content-Type: application/json
 %}
 
 
-### 5c. Bulk-Delete mit einer ungültigen ID dazwischen -> erwartet 207, results zeigt pro Karte den Status
+### 6c. Bulk-Delete mit einer ungültigen ID dazwischen -> erwartet 207, results zeigt pro Karte den Status
 POST {{baseUrl}}/api/decks/{{deckId}}/cards/bulk-delete
 Authorization: Bearer {{token}}
 Content-Type: application/json
@@ -99,11 +123,11 @@ Content-Type: application/json
 %}
 
 
-### 6. Fehlerfall: ohne Token -> erwartet 401
+### 7. Fehlerfall: ohne Token -> erwartet 401
 GET {{baseUrl}}/api/decks
 
 
-### 7. Deck erstellen (aktuell not implemented -> erwartet 501)
+### 8. Deck erstellen (aktuell not implemented -> erwartet 501)
 POST {{baseUrl}}/api/decks
 Authorization: Bearer {{token}}
 Content-Type: application/json
@@ -112,14 +136,3 @@ Content-Type: application/json
   "name": "Test Deck"
 }
 
-### 8. Karte hinzufügen
-POST {{baseUrl}}/api/decks/{{deckId}}/cards
-Authorization: Bearer {{token}}
-Content-Type: application/json
-
-{
-  "card_id": "9f2da581-bb19-43d2-b202-4eeda2fa29d7",
-  "quantity": 3,
-  "position": 3,
-  "reasoning": "Trainerkarte zur Unterstützung der Deckstrategie."
-}
