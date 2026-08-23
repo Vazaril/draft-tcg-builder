@@ -1,8 +1,10 @@
 import os
 from typing import cast, Any
+
+from google.genai.types import EmbedContentConfig
 from supabase import create_client
 from llama_index.core.ingestion import IngestionPipeline
-from llama_index.embeddings.google.gemini import GeminiEmbedding
+from llama_index.embeddings.google_genai import GoogleGenAIEmbedding
 from llama_index.vector_stores.supabase import SupabaseVectorStore
 from llama_index.core.schema import TransformComponent
 
@@ -25,7 +27,7 @@ def run_ingestion():
 
     cleaner: TransformComponent = MTGTextCleaner()
     enricher: TransformComponent = cast(Any, MTGSemanticExtractor())
-    embedder: TransformComponent = cast(Any, GeminiEmbedding(model_name="models/gemini-embedding-001", api_key=os.environ.get("GEMINI_API_KEY"), output_dimensionality=1536))
+    embedder: TransformComponent = cast(Any, GoogleGenAIEmbedding(model_name="models/gemini-embedding-001", api_key=os.environ.get("GEMINI_API_KEY"), embedding_config=EmbedContentConfig(output_dimensionality=1536)))
 
     pipeline_transforms: list[TransformComponent] = [cleaner, enricher, embedder]
 
