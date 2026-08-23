@@ -1,3 +1,9 @@
 Flask==3.0.3
 gunicorn==22.0.0
 google-genai==2.18.1
+llama_index==0.14.24
+llama-index-embeddings-google==0.4.2
+llama-index-vector-stores-supabase==0.5.0
+llama-index-llms-gemini==0.6.2
+protobuf==4.25.9
+supabase==2.31.0

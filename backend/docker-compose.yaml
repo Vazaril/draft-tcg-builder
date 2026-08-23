@@ -1,0 +1,16 @@
+services:
+  backend:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: draft-tcg-backend
+    ports:
+      - "5001:5000"
+    env_file:
+      - .env
+    volumes:
+      # Mount current directory into /app so code changes reflect immediately
+      - .:/app
+    # Override CMD in development for live logs, higher timeout, and auto-reload on code change
+    command: gunicorn --bind 0.0.0.0:5000 --workers 1 --timeout 300 --reload --access-logfile - --error-logfile - app:app
+    restart: unless-stopped
