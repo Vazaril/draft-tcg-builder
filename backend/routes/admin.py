@@ -1,3 +1,4 @@
+import threading
 import os
 from flask import Blueprint, jsonify, request
 from services.ingestion.pipeline import run_ingestion
@@ -13,8 +14,10 @@ def sync_vectors():
     if auth_header != f"Bearer {expected_secret}":
         return jsonify(error="Unauthorized"), 401
 
-    try:
-        run_ingestion()
-        return jsonify(message="Ingestion pipeline completed successfully!"), 200
-    except Exception as e:
-        return jsonify(error=str(e)), 500
+    thread = threading.Thread(target=run_ingestion)
+    thread.daemon = True
+    thread.start()
+
+    return jsonify({
+        "message": "Ingestion started in the background! Check Docker logs for progress."
+    }), 202

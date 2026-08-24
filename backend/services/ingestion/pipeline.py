@@ -1,15 +1,24 @@
 import os
-from typing import cast, Any
+from typing import cast, Any, Sequence
 
-from google.genai.types import EmbedContentConfig
 from supabase import create_client
 from llama_index.core.ingestion import IngestionPipeline
-from llama_index.embeddings.google_genai import GoogleGenAIEmbedding
+from llama_index.embeddings.ollama import OllamaEmbedding
 from llama_index.vector_stores.supabase import SupabaseVectorStore
-from llama_index.core.schema import TransformComponent
+from llama_index.core.schema import TransformComponent, BaseNode
 
 from .loader import fetch_cards_in_batches, fetch_rulings_in_batches, mark_cards_as_embedded, mark_rulings_as_embedded
 from .chunker import generate_card_nodes, generate_ruling_nodes
+
+class VectorTruncator(TransformComponent):
+    """Truncates MRL embeddings down to 1536 dimensions for Supabase pgvector."""
+    dimension: int = 1536
+
+    def __call__(self, nodes: Sequence[BaseNode], **kwargs: Any) -> Sequence[BaseNode]:
+        for node in nodes:
+            if node.embedding:
+                node.embedding = node.embedding[:self.dimension]
+        return nodes
 
 def run_ingestion():
     supabase_url = os.environ.get("SUPABASE_URL")
@@ -22,18 +31,23 @@ def run_ingestion():
         collection_name="mtg_nodes"
     )
 
-    embedder: TransformComponent = cast(Any, GoogleGenAIEmbedding(model_name="models/gemini-embedding-001", api_key=os.environ.get("GEMINI_API_KEY"), embedding_config=EmbedContentConfig(output_dimensionality=1536)))
+    embedder = OllamaEmbedding(
+        model_name="qwen3-embedding",
+        base_url=os.environ.get("OLLAMA_BASE_URL")
+    )
 
-    pipeline_transforms: list[TransformComponent] = [embedder]
+    pipeline_transforms: list[TransformComponent] = [
+        cast(TransformComponent, cast(Any, embedder)),
+        VectorTruncator(dimension=1536)
+    ]
 
-    # Build the Pipeline
     pipeline = IngestionPipeline(
         transformations=pipeline_transforms,
         vector_store=vector_store
     )
 
     print("Starting Card Ingestion...")
-    for card_batch in fetch_cards_in_batches(supabase, batch_size=2):
+    for card_batch in fetch_cards_in_batches(supabase, batch_size=25):
         card_nodes = generate_card_nodes(card_batch)
         pipeline.run(documents=card_nodes)
 
@@ -41,17 +55,13 @@ def run_ingestion():
         mark_cards_as_embedded(supabase, card_ids)
         print(f"Ingested and marked {len(card_nodes)} cards...")
 
-        break
-
     print("Starting Ruling Ingestion...")
-    for ruling_batch in fetch_rulings_in_batches(supabase, batch_size=2):
+    for ruling_batch in fetch_rulings_in_batches(supabase, batch_size=50):
         ruling_nodes = generate_ruling_nodes(ruling_batch)
         pipeline.run(documents=ruling_nodes)
 
         ruling_ids = [str(r.get("id")) for r in ruling_batch]
         mark_rulings_as_embedded(supabase, ruling_ids)
         print(f"Ingested and marked {len(ruling_nodes)} rulings...")
-
-        break
 
     print("Ingestion Complete!")
