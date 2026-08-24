@@ -9,10 +9,7 @@ from llama_index.vector_stores.supabase import SupabaseVectorStore
 from llama_index.core.schema import TransformComponent
 
 from .loader import fetch_cards_in_batches, fetch_rulings_in_batches, mark_cards_as_embedded, mark_rulings_as_embedded
-from .cleaner import MTGTextCleaner
 from .chunker import generate_card_nodes, generate_ruling_nodes
-from .enricher import MTGSemanticExtractor
-
 
 def run_ingestion():
     supabase_url = os.environ.get("SUPABASE_URL")
@@ -25,11 +22,9 @@ def run_ingestion():
         collection_name="mtg_nodes"
     )
 
-    cleaner: TransformComponent = MTGTextCleaner()
-    enricher: TransformComponent = cast(Any, MTGSemanticExtractor())
     embedder: TransformComponent = cast(Any, GoogleGenAIEmbedding(model_name="models/gemini-embedding-001", api_key=os.environ.get("GEMINI_API_KEY"), embedding_config=EmbedContentConfig(output_dimensionality=1536)))
 
-    pipeline_transforms: list[TransformComponent] = [cleaner, enricher, embedder]
+    pipeline_transforms: list[TransformComponent] = [embedder]
 
     # Build the Pipeline
     pipeline = IngestionPipeline(
