@@ -4,7 +4,7 @@ from typing import cast, Any, Sequence
 from supabase import create_client
 from llama_index.core.ingestion import IngestionPipeline
 from llama_index.embeddings.ollama import OllamaEmbedding
-from llama_index.vector_stores.supabase import SupabaseVectorStore
+from llama_index.vector_stores.postgres import PGVectorStore
 from llama_index.core.schema import TransformComponent, BaseNode
 
 from .loader import fetch_cards_in_batches, fetch_rulings_in_batches, mark_cards_as_embedded, mark_rulings_as_embedded
@@ -22,13 +22,15 @@ class VectorTruncator(TransformComponent):
 
 def run_ingestion():
     supabase_url = os.environ.get("SUPABASE_URL")
-    supabase_db_url = os.environ.get("SUPABASE_DB_URL")
+    db_url = os.environ.get("DB_URL")
     supabase_key = os.environ.get("SUPABASE_SERVICE_ROLE_KEY")
     supabase = create_client(supabase_url, supabase_key)
 
-    vector_store = SupabaseVectorStore(
-        postgres_connection_string=supabase_db_url,
-        collection_name="mtg_nodes"
+    vector_store = PGVectorStore.from_params(
+        connection_string=db_url,
+        table_name="mtg_nodes",
+        schema_name="vecs",
+        embed_dim=1536
     )
 
     embedder = OllamaEmbedding(

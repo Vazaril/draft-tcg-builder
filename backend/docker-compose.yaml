@@ -14,3 +14,28 @@ services:
       - .:/app
     command: gunicorn --bind 0.0.0.0:5000 --workers 1 --timeout 300 --reload --access-logfile - --error-logfile - app:app
     restart: unless-stopped
+    depends_on:
+      vector_db:
+        condition: service_healthy
+
+  vector_db:
+    image: pgvector/pgvector:pg16
+    container_name: mtg_vector_db
+    restart: always
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: mysecretpassword
+      POSTGRES_DB: mtg_vector_db
+    ports:
+      - "5432:5432"
+    volumes:
+      - vector_db_data:/var/lib/postgresql/data
+      - ./db_setup/full_mtg_vector_db.sql:/docker-entrypoint-initdb.d/init.sql
+    healthcheck:
+      test: [ "CMD-SHELL", "pg_isready -U postgres -d mtg_vector_db" ]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+volumes:
+  vector_db_data:
