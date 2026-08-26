@@ -4,6 +4,46 @@ import psycopg2.extras
 from llama_index.embeddings.ollama import OllamaEmbedding
 
 
+def exact_search_mtg(card_names: list) -> list[dict]:
+    """
+    Looks up exact MTG cards and their rulings by name, bypassing vector search.
+    """
+    if not card_names:
+        return []
+
+    try:
+        import psycopg2
+        import psycopg2.extras
+
+        db_url = os.environ.get("DB_URL")
+        conn = psycopg2.connect(db_url, cursor_factory=psycopg2.extras.RealDictCursor)
+        cursor = conn.cursor()
+
+        names_lower = [name.lower() for name in card_names]
+
+        placeholders = ', '.join(['%s'] * len(names_lower))
+
+        # Search both card nodes ('name') and ruling nodes ('card_name')
+        sql_query = f"""
+            SELECT id, metadata 
+            FROM vecs.mtg_nodes 
+            WHERE lower(metadata->>'name') IN ({placeholders})
+               OR lower(metadata->>'card_name') IN ({placeholders})
+            LIMIT 20; 
+        """
+
+        cursor.execute(sql_query, names_lower + names_lower)
+        results = cursor.fetchall()
+
+        cursor.close()
+        conn.close()
+
+        return [dict(row) for row in results]
+
+    except Exception as e:
+        print(f"Exact search failed: {e}")
+        return []
+
 def hybrid_search_mtg(query_text: str, match_count: int = 5) -> list[dict]:
     """
     Takes a user question, embeds it locally using Ollama (qwen3-embedding),
