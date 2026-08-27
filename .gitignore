@@ -43,3 +43,13 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# Python cache
+__pycache__/
+*.py[cod]
+
+# JetBrains HTTP Client private environment
+http-client.private.env.json
+*.private.env.json
+
+with-supabase-app/
