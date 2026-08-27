@@ -460,3 +460,37 @@ def _delete_or_reduce_card(supabase, deck_id, card_id, amount):
     ).eq("id", card_id).execute()
 
     return {"card_id": card_id, "deleted": False, "remaining_quantity": new_quantity}
+
+@decks_bp.get("/card-options")
+def get_card_options():
+    """
+    Liefert alle verfügbaren Pokémon-Karten für das Hinzufügen-Dropdown.
+    """
+
+    supabase = get_supabase()
+
+    if not supabase:
+        return jsonify(message="Unauthorized"), 401
+
+    try:
+        response = (
+            supabase
+            .table("pokemon_cards")
+            .select("""
+                id,
+                name,
+                card_type,
+                subtype
+            """)
+            .order("name")
+            .execute()
+        )
+
+        return jsonify(response.data or []), 200
+
+    except Exception as error:
+        print("Fehler beim Laden der Pokémon-Karten:", error)
+
+        return jsonify(
+            message="Pokémon-Karten konnten nicht geladen werden."
+        ), 500

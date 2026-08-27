@@ -1,12 +1,12 @@
 from flask import Flask, jsonify
 
 from gemini_client import generate_text
-from routes.auth import auth_bp
+#from routes.auth import auth_bp
 from routes.chat import chat_bp
 from routes.decks import decks_bp
 
 app = Flask(__name__)
-app.register_blueprint(auth_bp)
+#app.register_blueprint(auth_bp)
 app.register_blueprint(chat_bp)
 app.register_blueprint(decks_bp)
 

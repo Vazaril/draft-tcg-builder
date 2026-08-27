@@ -1,6 +1,12 @@
 import os
 
+from pathlib import Path
+
+from dotenv import load_dotenv
 from google import genai
+
+env_path = Path(__file__).resolve().parent / ".env.local"
+load_dotenv(env_path)
 
 DEFAULT_MODEL = os.environ.get("GEMINI_MODEL", "gemini-3.6-flash")
 

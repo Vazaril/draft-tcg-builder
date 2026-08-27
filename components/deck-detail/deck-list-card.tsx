@@ -3,19 +3,41 @@
 import { useState } from 'react';
 import { ChevronDown, ChevronUp, Minus, Plus, Trash2 } from 'lucide-react';
 
+import { AddCardDialog } from '@/components/ui/add-card-dialog';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
+
+import { deleteDeckCards, type PokemonCardOption } from '@/lib/api/decks';
 import type { DeckListEntry } from '@/lib/deck-detail';
 
+type AddedDeckCard = {
+  id: string;
+  card_id: string;
+  quantity: number;
+  position: number | null;
+  reasoning: string | null;
+  pokemon_cards: {
+    id: string;
+    name: string;
+    card_type: string | null;
+    subtype: string | null;
+    regulation_mark: string | null;
+  };
+};
+
 export function DeckListCard({
+  deckId,
   entries,
   extraCardsCount,
   isEditing,
+  cardOptions,
 }: {
+  deckId: string;
   entries: DeckListEntry[];
   extraCardsCount: number;
   isEditing: boolean;
+  cardOptions: PokemonCardOption[];
 }) {
   const [cards, setCards] = useState<DeckListEntry[]>(entries);
 
@@ -74,38 +96,104 @@ export function DeckListCard({
     }));
   }
 
-  function deleteSelectedCards() {
-    const completelyDeletedIds = new Set<string>();
+  async function deleteSelectedCards() {
+    try {
+      const cardsToDelete = selectedCards.map((cardId) => ({
+        card_id: cardId,
+        amount: deleteAmounts[cardId] ?? 1,
+      }));
 
-    setCards((current) =>
-      current.flatMap((card) => {
-        if (!selectedCards.includes(card.id)) {
-          return [card];
-        }
+      const data = await deleteDeckCards(deckId, cardsToDelete);
 
-        const amountToDelete = deleteAmounts[card.id] ?? 1;
+      const results = data.results;
 
-        const remainingQuantity = card.quantity - amountToDelete;
+      setCards((current) =>
+        current.flatMap((card) => {
+          const result = results.find(
+            (result: {
+              card_id: string;
+              deleted?: boolean;
+              remaining_quantity?: number;
+              error?: string;
+            }) => result.card_id === card.id
+          );
 
-        if (remainingQuantity <= 0) {
-          completelyDeletedIds.add(card.id);
+          if (!result || result.error) {
+            return [card];
+          }
 
-          return [];
-        }
+          if (result.deleted) {
+            return [];
+          }
 
-        return [
-          {
-            ...card,
-            quantity: remainingQuantity,
-          },
-        ];
-      })
-    );
+          if (result.remaining_quantity === undefined) {
+            return [card];
+          }
 
-    setOrder((current) => current.filter((id) => !completelyDeletedIds.has(id)));
+          return [
+            {
+              ...card,
+              quantity: result.remaining_quantity,
+            },
+          ];
+        })
+      );
 
-    setSelectedCards([]);
-    setDeleteAmounts({});
+      const completelyDeletedIds = new Set<string>(
+        results
+          .filter(
+            (result: { deleted?: boolean; error?: string }) =>
+              result.deleted === true && !result.error
+          )
+          .map((result: { card_id: string }) => result.card_id)
+      );
+
+      setOrder((current) => current.filter((id) => !completelyDeletedIds.has(id)));
+
+      setSelectedCards([]);
+      setDeleteAmounts({});
+    } catch (error) {
+      console.error('Fehler beim Löschen der Karten:', error);
+    }
+  }
+
+  function handleCardAdded(addedCard: AddedDeckCard) {
+    const existingCard = cards.find((card) => card.id === addedCard.id);
+
+    /*
+     * Karte existiert bereits im Deck.
+     * Das Backend hat nur quantity erhöht.
+     */
+    if (existingCard) {
+      setCards((current) =>
+        current.map((card) =>
+          card.id === addedCard.id
+            ? {
+                ...card,
+                quantity: addedCard.quantity,
+                reasoning: addedCard.reasoning ?? '',
+              }
+            : card
+        )
+      );
+
+      return;
+    }
+
+    /*
+     * Neue pokemon_deck_cards-Zeile.
+     */
+    const newCard: DeckListEntry = {
+      id: addedCard.id,
+      name: addedCard.pokemon_cards.name,
+      quantity: addedCard.quantity,
+      category: addedCard.pokemon_cards.card_type ?? 'Unbekannt',
+      reasoning: addedCard.reasoning ?? '',
+    };
+
+    setCards((current) => [...current, newCard]);
+
+    setOrder((current) => [...current, newCard.id]);
   }
 
   function move(id: string, direction: -1 | 1) {
@@ -125,30 +213,28 @@ export function DeckListCard({
     });
   }
 
-  /*
-  function handleExplainCard(id: string) {
-    const entry = byId[id];
-
-    const message = `Erkläre mir, warum ${entry.name} in diesem Deck enthalten ist.`;
-
-    return message;
-    // später z. B.:
-    // sendMessageToChat(message);
-  }
-
-   */
-
   return (
     <Card>
       <CardHeader>
         <div className="flex items-center justify-between gap-4">
           <CardTitle>Deckliste &mdash; mit Begründung (Explainable AI)</CardTitle>
 
-          {isEditing && selectedCards.length > 0 && (
-            <Button type="button" variant="destructive" size="sm" onClick={deleteSelectedCards}>
-              <Trash2 className="h-4 w-4" />
-              Löschen ({selectedCards.length})
-            </Button>
+          {isEditing && (
+            <div className="flex items-center gap-2">
+              <AddCardDialog
+                deckId={deckId}
+                cardOptions={cardOptions}
+                currentCardCount={cards.length}
+                onCardAdded={handleCardAdded}
+              />
+
+              {selectedCards.length > 0 && (
+                <Button type="button" variant="destructive" size="sm" onClick={deleteSelectedCards}>
+                  <Trash2 className="h-4 w-4" />
+                  Löschen ({selectedCards.length})
+                </Button>
+              )}
+            </div>
           )}
         </div>
       </CardHeader>

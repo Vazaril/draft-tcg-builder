@@ -1,3 +1,5 @@
+'use server';
+
 import { createClient } from '@/lib/supabase/server';
 
 const API_URL = 'http://127.0.0.1:5001';
@@ -58,6 +60,14 @@ export type DeckDetailData = Deck & {
   created_at: string;
   updated_at: string;
   cards: DeckCardEntry[];
+};
+
+export type PokemonCardOption = {
+  id: string;
+  name: string;
+  card_type: string | null;
+  subtype: string | null;
+  regulation_mark: string | null;
 };
 
 // getUserDecks ######################################
@@ -141,4 +151,105 @@ export async function getDeckById(deckId: string): Promise<DeckDetailData | null
 
     cards: deck.cards ?? [],
   };
+}
+
+// deleteDeckCards ######################################
+export async function deleteDeckCards(
+  deckId: string,
+  cards: {
+    card_id: string;
+    amount: number;
+  }[]
+) {
+  const supabase = await createClient();
+
+  const {
+    data: { session },
+  } = await supabase.auth.getSession();
+
+  if (!session) {
+    throw new Error('Nicht angemeldet.');
+  }
+
+  const response = await fetch(`${API_URL}/api/decks/${deckId}/cards/bulk-delete`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      Authorization: `Bearer ${session.access_token}`,
+    },
+    body: JSON.stringify({
+      cards,
+    }),
+  });
+
+  const data = await response.json();
+
+  if (!response.ok) {
+    throw new Error(data.message ?? 'Karten konnten nicht gelöscht werden.');
+  }
+
+  return data;
+}
+
+export async function getPokemonCardOptions(): Promise<PokemonCardOption[]> {
+  const supabase = await createClient();
+
+  const {
+    data: { session },
+  } = await supabase.auth.getSession();
+
+  if (!session?.access_token) {
+    throw new Error('Kein Access Token vorhanden');
+  }
+
+  const response = await fetch(`${API_URL}/api/decks/card-options`, {
+    headers: {
+      Authorization: `Bearer ${session.access_token}`,
+    },
+    cache: 'no-store',
+  });
+
+  if (!response.ok) {
+    throw new Error('Pokémon-Karten konnten nicht geladen werden.');
+  }
+
+  return response.json();
+}
+
+export async function addDeckCard(
+  deckId: string,
+  card: {
+    card_id: string;
+    quantity: number;
+    position?: number | null;
+    reasoning?: string | null;
+  }
+) {
+  const supabase = await createClient();
+
+  const {
+    data: { session },
+  } = await supabase.auth.getSession();
+
+  if (!session?.access_token) {
+    throw new Error('Nicht angemeldet.');
+  }
+
+  const response = await fetch(`${API_URL}/api/decks/${deckId}/cards`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      Authorization: `Bearer ${session.access_token}`,
+    },
+    body: JSON.stringify(card),
+    cache: 'no-store',
+  });
+
+  const data = await response.json();
+
+  if (!response.ok) {
+    throw new Error(data.message ?? 'Karte konnte nicht hinzugefügt werden.');
+  }
+
+  return data;
 }
