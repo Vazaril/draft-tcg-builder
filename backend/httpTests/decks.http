@@ -136,3 +136,29 @@ Content-Type: application/json
   "name": "Test Deck"
 }
 
+### 9. Komplettes Deck löschen
+DELETE {{baseUrl}}/api/decks/3e3b30e4-e2fa-45d9-8716-6b9897b650f1
+Authorization: Bearer {{token}}
+
+> {%
+  client.test("Status ist 200", function () {
+    client.assert(
+      response.status === 200,
+      "Erwartet 200, bekommen " + response.status
+    );
+  });
+
+  client.test("Gelöschte Deck-ID stimmt", function () {
+    client.assert(
+      response.body.deck_id === "{{deckId}}",
+      "Falsche deck_id in der Response"
+    );
+  });
+
+  client.test("Erfolgsmeldung vorhanden", function () {
+    client.assert(
+      response.body.message === "Deck wurde gelöscht.",
+      "Unerwartete Response: " + JSON.stringify(response.body)
+    );
+  });
+%}

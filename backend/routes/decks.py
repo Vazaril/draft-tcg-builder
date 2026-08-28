@@ -494,3 +494,43 @@ def get_card_options():
         return jsonify(
             message="Pokémon-Karten konnten nicht geladen werden."
         ), 500
+
+@decks_bp.delete("/<deck_id>")
+def delete_deck(deck_id):
+    supabase = get_supabase()
+
+    if not supabase:
+        return jsonify(message="Unauthorized"), 401
+
+    try:
+        deck_response = (
+            supabase
+            .table("decks")
+            .select("id")
+            .eq("id", deck_id)
+            .limit(1)
+            .execute()
+        )
+
+        if not deck_response.data:
+            return jsonify(message="Deck nicht gefunden."), 404
+
+        (
+            supabase
+            .table("decks")
+            .delete()
+            .eq("id", deck_id)
+            .execute()
+        )
+
+        return jsonify(
+            message="Deck wurde gelöscht.",
+            deck_id=deck_id
+        ), 200
+
+    except Exception as error:
+        print("Fehler beim Löschen des Decks:", error)
+
+        return jsonify(
+            message="Deck konnte nicht gelöscht werden."
+        ), 500

@@ -253,3 +253,31 @@ export async function addDeckCard(
 
   return data;
 }
+
+export async function deleteDeck(deckId: string) {
+  const supabase = await createClient();
+
+  const {
+    data: { session },
+  } = await supabase.auth.getSession();
+
+  if (!session?.access_token) {
+    throw new Error('Nicht angemeldet.');
+  }
+
+  const response = await fetch(`${API_URL}/api/decks/${deckId}`, {
+    method: 'DELETE',
+    headers: {
+      Authorization: `Bearer ${session.access_token}`,
+    },
+    cache: 'no-store',
+  });
+
+  const data = await response.json().catch(() => null);
+
+  if (!response.ok) {
+    throw new Error(data?.message ?? 'Deck konnte nicht gelöscht werden.');
+  }
+
+  return data;
+}
