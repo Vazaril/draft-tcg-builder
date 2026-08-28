@@ -1,6 +1,5 @@
-from flask import Blueprint, jsonify, request
-
-from gemini_client import send_chat_message
+from flask import Blueprint, jsonify, request, Response
+from services.retrieval.engine import generate_mtg_answer
 
 chat_bp = Blueprint("chat", __name__, url_prefix="/api/chat")
 
@@ -21,15 +20,19 @@ def chat():
 
     for entry in history:
         if (
-            not isinstance(entry, dict)
-            or entry.get("role") not in VALID_ROLES
-            or not isinstance(entry.get("content"), str)
+                not isinstance(entry, dict)
+                or entry.get("role") not in VALID_ROLES
+                or not isinstance(entry.get("content"), str)
         ):
             return jsonify(error="each history entry needs role (user/model) and content"), 400
 
     try:
-        reply = send_chat_message(history, message)
+        stream_generator = generate_mtg_answer(message, history)
+
+        return Response(
+            stream_generator,
+            mimetype='text/event-stream'
+        )
+
     except Exception as exc:
         return jsonify(error=str(exc)), 502
-
-    return jsonify(role="model", content=reply)
