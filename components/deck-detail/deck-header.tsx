@@ -1,13 +1,14 @@
 'use client';
 
-import { Check, Pencil, Share2 } from 'lucide-react';
+import { Check, Pencil } from 'lucide-react';
 
 import { DeckDeleteButton } from '@/components/deck-detail/deck-delete-button';
+import { DeckShareButton } from '@/components/deck-detail/deck-share-button';
 import { GoalChips } from '@/components/deck-detail/goal-chips';
 import { Button } from '@/components/ui/button';
+
+import type { Deck } from '@/lib/api/decks';
 import type { DeckDetail } from '@/lib/deck-detail';
-import type { Deck } from '@/lib/mock-decks';
-import { DeckShareButton } from '@/components/deck-detail/deck-share-button';
 
 export function DeckHeader({
   deck,

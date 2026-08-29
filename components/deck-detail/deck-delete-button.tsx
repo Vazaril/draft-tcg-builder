@@ -10,6 +10,7 @@ import { deleteDeck } from '@/lib/api/decks';
 
 export function DeckDeleteButton({ deckId, deckName }: { deckId: string; deckName: string }) {
   const router = useRouter();
+
   const [isDeleting, setIsDeleting] = useState(false);
 
   async function handleDeleteDeck() {
@@ -17,6 +18,8 @@ export function DeckDeleteButton({ deckId, deckName }: { deckId: string; deckNam
       setIsDeleting(true);
 
       await deleteDeck(deckId);
+
+      sessionStorage.setItem('deck-success-message', 'Deck gelöscht');
 
       router.replace('/protected/my-decks');
     } catch {
@@ -44,6 +47,7 @@ export function DeckDeleteButton({ deckId, deckName }: { deckId: string; deckNam
           onClick={handleDeleteDeck}
         >
           <Trash2 className="h-4 w-4" />
+
           {isDeleting ? 'Wird gelöscht...' : 'Deck löschen'}
         </Button>
       </div>

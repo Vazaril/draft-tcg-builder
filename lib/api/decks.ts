@@ -6,10 +6,13 @@ const API_URL = 'http://127.0.0.1:5001';
 
 export type DeckAccent = 'primary' | 'secondary' | 'accent' | 'muted';
 
+export type DeckGameType = 'pokemon' | 'magic';
+
 export type Deck = {
   id: string;
   name: string;
   game: string;
+  gameType: DeckGameType;
   format: string;
   tags: string[];
   accent: DeckAccent;
@@ -17,18 +20,14 @@ export type Deck = {
 
 export type DeckSummary = {
   id: string;
-  user_id: string;
-  game_id: string;
   name: string;
   description: string | null;
   format: string | null;
   tags: string[];
   accent: DeckAccent;
 
-  games: {
-    id: string;
-    name: string;
-  };
+  game: string;
+  game_type: DeckGameType;
 
   created_at: string;
   updated_at: string;
@@ -42,7 +41,27 @@ export type PokemonCard = {
   regulation_mark: string | null;
 };
 
-export type DeckCardEntry = {
+export type MagicCard = {
+  id: string;
+  name: string;
+  mana_cost: string | null;
+  cmc: number | null;
+  type_line: string | null;
+  oracle_text: string | null;
+  power: string | null;
+  toughness: string | null;
+  loyalty: string | null;
+  colors: string[] | null;
+  color_identity: string[] | null;
+  keywords: string[] | null;
+  image_uri: string | null;
+  set_code: string | null;
+  set_name: string | null;
+  rarity: string | null;
+  legalities: Record<string, string> | null;
+};
+
+export type PokemonDeckCardEntry = {
   id: string;
   card_id: string;
   quantity: number;
@@ -50,6 +69,15 @@ export type DeckCardEntry = {
   reasoning: string | null;
   pokemon_cards: PokemonCard;
 };
+
+export type MagicDeckCardEntry = {
+  card_id: string;
+  quantity: number;
+  zone: string;
+  mtg_cards: MagicCard;
+};
+
+export type DeckCardEntry = PokemonDeckCardEntry | MagicDeckCardEntry;
 
 type BackendDeckDetail = DeckSummary & {
   cards: DeckCardEntry[];
@@ -70,7 +98,20 @@ export type PokemonCardOption = {
   regulation_mark: string | null;
 };
 
-// getUserDecks ######################################
+export type MagicCardOption = {
+  id: string;
+  name: string;
+  mana_cost: string | null;
+  type_line: string | null;
+  rarity: string | null;
+  image_uri: string | null;
+};
+
+export type CardOption = PokemonCardOption | MagicCardOption;
+
+// ==========================================================
+// getUserDecks
+// ==========================================================
 
 export async function getUserDecks(): Promise<Deck[]> {
   const supabase = await createClient();
@@ -99,14 +140,18 @@ export async function getUserDecks(): Promise<Deck[]> {
   return decks.map((deck) => ({
     id: deck.id,
     name: deck.name,
-    game: deck.games.name,
+    game: deck.game,
+    gameType: deck.game_type,
     format: deck.format ?? '',
     tags: deck.tags ?? [],
     accent: deck.accent,
   }));
 }
 
-// getDeckById ######################################
+// ==========================================================
+// getDeckById
+// ==========================================================
+
 export async function getDeckById(deckId: string): Promise<DeckDetailData | null> {
   const supabase = await createClient();
 
@@ -138,9 +183,8 @@ export async function getDeckById(deckId: string): Promise<DeckDetailData | null
   return {
     id: deck.id,
     name: deck.name,
-
-    game: deck.games.name,
-
+    game: deck.game,
+    gameType: deck.game_type,
     format: deck.format ?? '',
     tags: deck.tags ?? [],
     accent: deck.accent,
@@ -153,12 +197,16 @@ export async function getDeckById(deckId: string): Promise<DeckDetailData | null
   };
 }
 
-// deleteDeckCards ######################################
+// ==========================================================
+// deleteDeckCards
+// ==========================================================
+
 export async function deleteDeckCards(
   deckId: string,
   cards: {
     card_id: string;
     amount: number;
+    zone?: string;
   }[]
 ) {
   const supabase = await createClient();
@@ -167,7 +215,7 @@ export async function deleteDeckCards(
     data: { session },
   } = await supabase.auth.getSession();
 
-  if (!session) {
+  if (!session?.access_token) {
     throw new Error('Nicht angemeldet.');
   }
 
@@ -180,6 +228,7 @@ export async function deleteDeckCards(
     body: JSON.stringify({
       cards,
     }),
+    cache: 'no-store',
   });
 
   const data = await response.json();
@@ -191,7 +240,11 @@ export async function deleteDeckCards(
   return data;
 }
 
-export async function getPokemonCardOptions(): Promise<PokemonCardOption[]> {
+// ==========================================================
+// getCardOptions
+// ==========================================================
+
+export async function getCardOptions(gameType: DeckGameType): Promise<CardOption[]> {
   const supabase = await createClient();
 
   const {
@@ -202,7 +255,7 @@ export async function getPokemonCardOptions(): Promise<PokemonCardOption[]> {
     throw new Error('Kein Access Token vorhanden');
   }
 
-  const response = await fetch(`${API_URL}/api/decks/card-options`, {
+  const response = await fetch(`${API_URL}/api/decks/card-options?game_type=${gameType}`, {
     headers: {
       Authorization: `Bearer ${session.access_token}`,
     },
@@ -210,19 +263,45 @@ export async function getPokemonCardOptions(): Promise<PokemonCardOption[]> {
   });
 
   if (!response.ok) {
-    throw new Error('Pokémon-Karten konnten nicht geladen werden.');
+    throw new Error('Karten konnten nicht geladen werden.');
   }
 
   return response.json();
 }
+
+// ==========================================================
+// optional: Pokémon-spezifischer Wrapper
+// Damit dein bestehender Code erstmal weiter funktioniert
+// ==========================================================
+
+export async function getPokemonCardOptions(): Promise<PokemonCardOption[]> {
+  return getCardOptions('pokemon') as Promise<PokemonCardOption[]>;
+}
+
+// ==========================================================
+// optional: Magic-spezifischer Wrapper
+// ==========================================================
+
+export async function getMagicCardOptions(): Promise<MagicCardOption[]> {
+  return getCardOptions('magic') as Promise<MagicCardOption[]>;
+}
+
+// ==========================================================
+// addDeckCard
+// ==========================================================
 
 export async function addDeckCard(
   deckId: string,
   card: {
     card_id: string;
     quantity: number;
+
+    // Pokémon
     position?: number | null;
     reasoning?: string | null;
+
+    // Magic
+    zone?: string;
   }
 ) {
   const supabase = await createClient();
@@ -253,6 +332,10 @@ export async function addDeckCard(
 
   return data;
 }
+
+// ==========================================================
+// deleteDeck
+// ==========================================================
 
 export async function deleteDeck(deckId: string) {
   const supabase = await createClient();
