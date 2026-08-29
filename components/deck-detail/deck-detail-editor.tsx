@@ -7,10 +7,18 @@ import { DeckHeader } from '@/components/deck-detail/deck-header';
 import { DeckListCard } from '@/components/deck-detail/deck-list-card';
 import { SynergyScoreCard } from '@/components/deck-detail/synergy-score-card';
 
+import type { CardOption, Deck } from '@/lib/api/decks';
 import type { DeckDetail } from '@/lib/deck-detail';
-import type { Deck } from '@/lib/mock-decks';
 
-export function DeckDetailEditor({ deck, detail }: { deck: Deck; detail: DeckDetail }) {
+export function DeckDetailEditor({
+  deck,
+  detail,
+  cardOptions,
+}: {
+  deck: Deck;
+  detail: DeckDetail;
+  cardOptions: CardOption[];
+}) {
   const [isEditing, setIsEditing] = useState(false);
 
   return (
@@ -20,9 +28,12 @@ export function DeckDetailEditor({ deck, detail }: { deck: Deck; detail: DeckDet
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
         <div className="lg:col-span-2">
           <DeckListCard
+            deckId={deck.id}
+            gameType={deck.gameType}
             entries={detail.cardlist}
             extraCardsCount={detail.extraCardsCount}
             isEditing={isEditing}
+            cardOptions={cardOptions}
           />
         </div>
 

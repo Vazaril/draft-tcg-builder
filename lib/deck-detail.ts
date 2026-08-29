@@ -4,6 +4,7 @@ export type DeckListEntry = {
   name: string;
   category: string;
   reasoning: string;
+  zone?: string;
 };
 
 export type StatRow = { label: string; value: string };

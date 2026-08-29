@@ -1,15 +1,27 @@
-### deckId/deckCardId ändern sich pro Test-Lauf, deshalb hier inline statt in der Env-Datei
-@deckId = e2d163fc-efc8-4aea-9255-b10db9594a5e
-# Achtung: das ist die "id" der pokemon_deck_cards-Zeile aus der Deck-Response
-# (NICHT das "card_id"-Feld — das zeigt auf pokemon_cards.id und ist eine andere ID!)
-@deckCardId = 9f2da581-bb19-43d2-b202-4eeda2fa29d7
-# zweite Karte für den Bulk-Test — hier: Miraidon
-@deckCardId2 = 34838c53-3398-45cc-94aa-9582b92ef6d8
+### ============================================================
+### TESTDATEN
+### ============================================================
+
+@pokemonDeckId = e2d163fc-efc8-4aea-9255-b10db9594a5e
+@magicDeckId = 57dcba51-61bc-4556-881a-a3e6ec82b44d
+
+# Pokémon:
+# ID aus pokemon_cards.id -> für Hinzufügen
+@pokemonCardId = 9f2da581-bb19-43d2-b202-4eeda2fa29d7
+
+# ID aus pokemon_deck_cards.id -> für Löschen
+@pokemonDeckCardId = 34838c53-3398-45cc-94aa-9582b92ef6d8
+@pokemonDeckCardId2 = 6f4f008b-63ac-4e50-afd3-94b3fd23e312
+
+# Magic:
+# mtg_cards.id
+@magicCardId = 1cacc52b-9e52-42d3-a152-0c96ff55ab44
+@magicCardId2 = 5819e3f3-da49-4003-88ce-f3b7bb495787
 
 
-### 0. Login über Supabase, um einen echten Access Token zu bekommen.
-# Einmal ausführen — der Token wird danach automatisch in {{token}}
-# für alle folgenden Requests gespeichert (siehe Script unten).
+### 0. LOGIN
+### ============================================================
+
 # @name login
 POST {{supabaseUrl}}/auth/v1/token?grant_type=password
 apikey: {{supabaseAnonKey}}
@@ -22,112 +34,410 @@ Content-Type: application/json
 
 > {%
   client.global.set("token", response.body.access_token);
-  client.log("Token gespeichert: " + response.body.access_token.substring(0, 20) + "...");
 %}
 
 
-### 1. Alle Decks des eingeloggten Users
+### 1. ALLE DECKS
+### ============================================================
+
 GET {{baseUrl}}/api/decks
 Authorization: Bearer {{token}}
 
+> {%
+  client.test("Status ist 200", function () {
+    client.assert(
+      response.status === 200,
+      "Erwartet 200, bekommen " + response.status
+    );
+  });
 
-### 2. Einzelnes Deck inkl. Karten
-GET {{baseUrl}}/api/decks/{{deckId}}
+  client.test("Response ist ein Array", function () {
+    client.assert(
+      Array.isArray(response.body),
+      "Response ist kein Array"
+    );
+  });
+%}
+
+
+### 2. POKÉMON DECK LADEN
+### ============================================================
+
+GET {{baseUrl}}/api/decks/{{pokemonDeckId}}
 Authorization: Bearer {{token}}
-
-
-### 3. Karte hinzufügen
-POST {{baseUrl}}/api/decks/{{deckId}}/cards
-Authorization: Bearer {{token}}
-Content-Type: application/json
-
-{
-  "card_id": "9f2da581-bb19-43d2-b202-4eeda2fa29d7",
-  "quantity": 3,
-  "position": 3,
-  "reasoning": "Trainerkarte zur Unterstützung der Deckstrategie."
-}
-
-### 3b. Karte hinzufügen damit der Bulck löschen immer funktioniert
-POST {{baseUrl}}/api/decks/{{deckId}}/cards
-Authorization: Bearer {{token}}
-Content-Type: application/json
-
-{
-  "card_id": "34838c53-3398-45cc-94aa-9582b92ef6d8",
-  "quantity": 3,
-  "position": 3,
-  "reasoning": "Trainerkarte zur Unterstützung der Deckstrategie."
-}
-
-### 4. Karte komplett löschen (kein amount-Parameter = volle Menge)
-DELETE {{baseUrl}}/api/decks/{{deckId}}/cards/{{deckCardId}}
-Authorization: Bearer {{token}}
-
-
-### 5. Nur 2 Kopien einer Karte löschen (Anzahl wird reduziert, Karte bleibt)
-DELETE {{baseUrl}}/api/decks/{{deckId}}/cards/{{deckCardId}}?amount=2
-Authorization: Bearer {{token}}
-
-
-### 6. Fehlerfall: nicht existierende Karte löschen -> erwartet 404
-DELETE {{baseUrl}}/api/decks/{{deckId}}/cards/00000000-0000-0000-0000-000000000000
-Authorization: Bearer {{token}}
-
-
-### 6b. Zwei unterschiedliche Karten gleichzeitig löschen, jede mit eigener Menge
-# Pikachu (deckCardId): 2 Kopien löschen, Rest bleibt im Deck
-# Miraidon (deckCardId2): 1 Kopie löschen, Rest bleibt im Deck
-POST {{baseUrl}}/api/decks/{{deckId}}/cards/bulk-delete
-Authorization: Bearer {{token}}
-Content-Type: application/json
-
-{
-  "cards": [
-    { "card_id": "{{deckCardId}}", "amount": 2 },
-    { "card_id": "{{deckCardId2}}", "amount": 1 }
-  ]
-}
 
 > {%
   client.test("Status ist 200", function () {
-    client.assert(response.status === 200, "Erwartet 200, bekommen " + response.status);
+    client.assert(response.status === 200);
   });
 
-  client.test("Beide Karten wurden ohne Fehler verarbeitet", function () {
-    const results = response.body.results;
-    client.assert(results.length === 2, "Erwartet 2 Ergebnisse, bekommen " + results.length);
-    results.forEach(function (result) {
-      client.assert(!result.error, "Karte " + result.card_id + " hat einen Fehler: " + result.error);
+  client.test("Deck ist Pokémon", function () {
+    client.assert(
+      response.body.game_type === "pokemon",
+      "Erwartet pokemon, bekommen " + response.body.game_type
+    );
+  });
+
+  client.test("Cards ist ein Array", function () {
+    client.assert(
+      Array.isArray(response.body.cards),
+      "cards ist kein Array"
+    );
+  });
+
+  client.test("Pokémon-Karten besitzen benötigte Daten", function () {
+    response.body.cards.forEach(function (entry) {
+      client.assert(entry.id, "pokemon_deck_cards.id fehlt");
+      client.assert(entry.card_id, "card_id fehlt");
+      client.assert(entry.quantity > 0, "quantity ungültig");
+      client.assert(entry.pokemon_cards, "pokemon_cards fehlt");
+      client.assert(entry.pokemon_cards.name, "Kartenname fehlt");
     });
   });
 %}
 
 
-### 6c. Bulk-Delete mit einer ungültigen ID dazwischen -> erwartet 207, results zeigt pro Karte den Status
-POST {{baseUrl}}/api/decks/{{deckId}}/cards/bulk-delete
+### 3. MAGIC DECK LADEN
+### ============================================================
+
+GET {{baseUrl}}/api/decks/{{magicDeckId}}
+Authorization: Bearer {{token}}
+
+> {%
+  client.test("Status ist 200", function () {
+    client.assert(response.status === 200);
+  });
+
+  client.test("Deck ist Magic", function () {
+    client.assert(
+      response.body.game_type === "magic",
+      "Erwartet magic, bekommen " + response.body.game_type
+    );
+  });
+
+  client.test("Cards ist ein Array", function () {
+    client.assert(
+      Array.isArray(response.body.cards),
+      "cards ist kein Array"
+    );
+  });
+
+  client.test("Magic-Karten besitzen benötigte Daten", function () {
+    response.body.cards.forEach(function (entry) {
+      client.assert(entry.card_id, "card_id fehlt");
+      client.assert(entry.quantity > 0, "quantity ungültig");
+      client.assert(entry.zone, "zone fehlt");
+      client.assert(entry.mtg_cards, "mtg_cards fehlt");
+      client.assert(entry.mtg_cards.name, "Kartenname fehlt");
+    });
+  });
+%}
+
+
+### 4. NICHT EXISTIERENDES DECK
+### ============================================================
+
+GET {{baseUrl}}/api/decks/00000000-0000-0000-0000-000000000000
+Authorization: Bearer {{token}}
+
+> {%
+  client.test("Status ist 404", function () {
+    client.assert(
+      response.status === 404,
+      "Erwartet 404, bekommen " + response.status
+    );
+  });
+%}
+
+
+
+### 5. KARTENOPTIONEN POKÉMON
+### ============================================================
+
+GET {{baseUrl}}/api/decks/card-options?game_type=pokemon
+Authorization: Bearer {{token}}
+
+> {%
+  client.test("Status ist 200", function () {
+    client.assert(response.status === 200);
+  });
+
+  client.test("Response ist ein Array", function () {
+    client.assert(Array.isArray(response.body));
+  });
+%}
+
+
+
+### 6. KARTENOPTIONEN MAGIC
+### ============================================================
+
+GET {{baseUrl}}/api/decks/card-options?game_type=magic
+Authorization: Bearer {{token}}
+
+> {%
+  client.test("Status ist 200", function () {
+    client.assert(response.status === 200);
+  });
+
+  client.test("Response ist ein Array", function () {
+    client.assert(Array.isArray(response.body));
+  });
+%}
+
+
+
+### 7. POKÉMON-KARTE HINZUFÜGEN
+### ============================================================
+
+POST {{baseUrl}}/api/decks/{{pokemonDeckId}}/cards
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "card_id": "{{pokemonCardId}}",
+  "quantity": 3,
+  "position": 3,
+  "reasoning": "Trainerkarte zur Unterstützung der Deckstrategie."
+}
+
+> {%
+  client.test("Status ist 200 oder 201", function () {
+    client.assert(
+      response.status === 200 || response.status === 201,
+      "Erwartet 200/201, bekommen " + response.status
+    );
+  });
+%}
+
+
+
+### 8. MAGIC-KARTE HINZUFÜGEN
+### ============================================================
+
+POST {{baseUrl}}/api/decks/{{magicDeckId}}/cards
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "card_id": "{{magicCardId}}",
+  "quantity": 2,
+  "zone": "mainboard"
+}
+
+> {%
+  client.test("Status ist 200 oder 201", function () {
+    client.assert(
+      response.status === 200 || response.status === 201,
+      "Erwartet 200/201, bekommen " + response.status
+    );
+  });
+
+  client.test("Game-spezifische Magic-Daten vorhanden", function () {
+    client.assert(response.body.card_id, "card_id fehlt");
+    client.assert(response.body.quantity > 0, "quantity ungültig");
+    client.assert(response.body.zone === "mainboard", "zone stimmt nicht");
+    client.assert(response.body.mtg_cards, "mtg_cards fehlt");
+  });
+%}
+
+
+
+### 9. POKÉMON: ANZAHL REDUZIEREN
+### ============================================================
+
+DELETE {{baseUrl}}/api/decks/{{pokemonDeckId}}/cards/{{pokemonDeckCardId}}?amount=1
+Authorization: Bearer {{token}}
+
+> {%
+  client.test("Status ist 200", function () {
+    client.assert(response.status === 200);
+  });
+
+  client.test("Game Type ist Pokémon", function () {
+    client.assert(response.body.game_type === "pokemon");
+  });
+%}
+
+
+
+### 10. MAGIC: ANZAHL REDUZIEREN
+### ============================================================
+
+DELETE {{baseUrl}}/api/decks/{{magicDeckId}}/cards/{{magicCardId}}?amount=1&zone=mainboard
+Authorization: Bearer {{token}}
+
+> {%
+  client.test("Status ist 200", function () {
+    client.assert(response.status === 200);
+  });
+
+  client.test("Game Type ist Magic", function () {
+    client.assert(response.body.game_type === "magic");
+  });
+%}
+
+
+
+### 11. POKÉMON: KARTE KOMPLETT LÖSCHEN
+### ============================================================
+
+DELETE {{baseUrl}}/api/decks/{{pokemonDeckId}}/cards/{{pokemonDeckCardId}}
+Authorization: Bearer {{token}}
+
+> {%
+  client.test("Status ist 200", function () {
+    client.assert(response.status === 200);
+  });
+
+  client.test("Karte wurde komplett gelöscht", function () {
+    client.assert(response.body.deleted === true);
+    client.assert(response.body.remaining_quantity === 0);
+  });
+%}
+
+
+
+### 12. MAGIC: KARTE KOMPLETT LÖSCHEN
+### ============================================================
+
+DELETE {{baseUrl}}/api/decks/{{magicDeckId}}/cards/{{magicCardId}}?zone=mainboard
+Authorization: Bearer {{token}}
+
+> {%
+  client.test("Status ist 200", function () {
+    client.assert(response.status === 200);
+  });
+
+  client.test("Karte wurde komplett gelöscht", function () {
+    client.assert(response.body.deleted === true);
+    client.assert(response.body.remaining_quantity === 0);
+  });
+%}
+
+
+
+### 13. POKÉMON BULK DELETE
+### ============================================================
+
+POST {{baseUrl}}/api/decks/{{pokemonDeckId}}/cards/bulk-delete
 Authorization: Bearer {{token}}
 Content-Type: application/json
 
 {
   "cards": [
-    { "card_id": "{{deckCardId}}", "amount": 1 },
-    { "card_id": "00000000-0000-0000-0000-000000000000" }
+    {
+      "card_id": "{{pokemonDeckCardId}}",
+      "amount": 1
+    },
+    {
+      "card_id": "{{pokemonDeckCardId2}}",
+      "amount": 1
+    }
   ]
 }
 
 > {%
-  client.test("Status ist 207 (teilweise fehlgeschlagen)", function () {
-    client.assert(response.status === 207, "Erwartet 207, bekommen " + response.status);
+  client.test("Status ist 200", function () {
+    client.assert(
+      response.status === 200,
+      "Erwartet 200, bekommen " + response.status
+    );
+  });
+
+  client.test("Zwei Ergebnisse vorhanden", function () {
+    client.assert(response.body.results.length === 2);
   });
 %}
 
 
-### 7. Fehlerfall: ohne Token -> erwartet 401
+
+### 14. MAGIC BULK DELETE
+### ============================================================
+
+POST {{baseUrl}}/api/decks/{{magicDeckId}}/cards/bulk-delete
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "cards": [
+    {
+      "card_id": "{{magicCardId}}",
+      "amount": 1,
+      "zone": "mainboard"
+    },
+    {
+      "card_id": "{{magicCardId2}}",
+      "amount": 1,
+      "zone": "mainboard"
+    }
+  ]
+}
+
+> {%
+  client.test("Status ist 200", function () {
+    client.assert(
+      response.status === 200,
+      "Erwartet 200, bekommen " + response.status
+    );
+  });
+
+  client.test("Zwei Ergebnisse vorhanden", function () {
+    client.assert(response.body.results.length === 2);
+  });
+%}
+
+
+
+### 15. BULK DELETE MIT UNGÜLTIGER KARTE -> 207
+### ============================================================
+
+POST {{baseUrl}}/api/decks/{{pokemonDeckId}}/cards/bulk-delete
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "cards": [
+    {
+      "card_id": "{{pokemonDeckCardId}}",
+      "amount": 1
+    },
+    {
+      "card_id": "00000000-0000-0000-0000-000000000000"
+    }
+  ]
+}
+
+> {%
+  client.test("Status ist 207", function () {
+    client.assert(
+      response.status === 207,
+      "Erwartet 207, bekommen " + response.status
+    );
+  });
+%}
+
+
+
+### 16. OHNE TOKEN -> 401
+### ============================================================
+
 GET {{baseUrl}}/api/decks
 
+> {%
+  client.test("Status ist 401", function () {
+    client.assert(
+      response.status === 401,
+      "Erwartet 401, bekommen " + response.status
+    );
+  });
+%}
 
-### 8. Deck erstellen (aktuell not implemented -> erwartet 501)
+
+
+### 17. DECK ERSTELLEN -> NOCH 501
+### ============================================================
+
 POST {{baseUrl}}/api/decks
 Authorization: Bearer {{token}}
 Content-Type: application/json
@@ -136,3 +446,65 @@ Content-Type: application/json
   "name": "Test Deck"
 }
 
+> {%
+  client.test("Status ist 501", function () {
+    client.assert(
+      response.status === 501,
+      "Erwartet 501, bekommen " + response.status
+    );
+  });
+%}
+
+
+
+### 18. POKÉMON DECK KOMPLETT LÖSCHEN
+### ACHTUNG: eigene Test-Deck-ID verwenden!
+### ============================================================
+
+@pokemonDeleteDeckId = 399b1458-827c-462f-8698-7240e2d83e0b
+
+DELETE {{baseUrl}}/api/decks/{{pokemonDeleteDeckId}}
+Authorization: Bearer {{token}}
+
+> {%
+  client.test("Status ist 200", function () {
+    client.assert(response.status === 200);
+  });
+
+  client.test("Game Type ist Pokémon", function () {
+    client.assert(response.body.game_type === "pokemon");
+  });
+
+  client.test("Deck-ID stimmt", function () {
+    client.assert(
+      response.body.deck_id === "{{pokemonDeleteDeckId}}"
+    );
+  });
+%}
+
+
+
+### 19. MAGIC DECK KOMPLETT LÖSCHEN
+### ACHTUNG: eigene Test-Deck-ID verwenden!
+### ============================================================
+
+@magicDeleteDeckId = 57dcba51-61bc-4556-881a-a3e6ec82b44d
+
+DELETE {{baseUrl}}/api/decks/{{magicDeleteDeckId}}
+Authorization: Bearer {{token}}
+
+> {%
+  client.test("Status ist 200", function () {
+    client.assert(response.status === 200);
+  });
+
+  client.test("Game Type ist Magic", function () {
+    client.assert(response.body.game_type === "magic");
+  });
+
+  client.test("Deck-ID stimmt", function () {
+    client.assert(
+      response.body.deck_id === "{{magicDeleteDeckId}}"
+    );
+  });
+%}
