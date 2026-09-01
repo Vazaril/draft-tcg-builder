@@ -5,6 +5,7 @@ import { SidebarShell } from '@/components/sidebar-shell';
 import { SidebarNav } from '@/components/sidebar-nav';
 import { Sidebar, SidebarHeader, SidebarContent, SidebarFooter } from '@/components/ui/sidebar';
 import { siteConfig } from '@/config/site';
+import { JudgeChatShell } from '@/components/judge-chat-shell';
 
 export default function ProtectedLayout({ children }: { children: React.ReactNode }) {
   const sidebarContent = (
@@ -15,7 +16,7 @@ export default function ProtectedLayout({ children }: { children: React.ReactNod
       <SidebarContent>
         <SidebarNav />
       </SidebarContent>
-      <SidebarFooter>{/* Footer Links */}</SidebarFooter>
+      <SidebarFooter>{/* Footer Left */}</SidebarFooter>
     </Sidebar>
   );
 
@@ -24,13 +25,16 @@ export default function ProtectedLayout({ children }: { children: React.ReactNod
       <ThemeSwitcher />
       <Suspense fallback={<div className="h-9 w-24 animate-pulse rounded bg-muted" />}>
         <AuthButton />
+        <JudgeChatShell />
       </Suspense>
     </>
   );
 
   return (
-    <SidebarShell sidebar={sidebarContent} headerActions={headerActions}>
-      {children}
-    </SidebarShell>
+    <>
+      <SidebarShell sidebar={sidebarContent} headerActions={headerActions}>
+        {children}
+      </SidebarShell>
+    </>
   );
 }
