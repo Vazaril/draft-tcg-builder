@@ -1,0 +1,138 @@
+### deckId/deckCardId ändern sich pro Test-Lauf, deshalb hier inline statt in der Env-Datei
+@deckId = e2d163fc-efc8-4aea-9255-b10db9594a5e
+# Achtung: das ist die "id" der pokemon_deck_cards-Zeile aus der Deck-Response
+# (NICHT das "card_id"-Feld — das zeigt auf pokemon_cards.id und ist eine andere ID!)
+@deckCardId = 9f2da581-bb19-43d2-b202-4eeda2fa29d7
+# zweite Karte für den Bulk-Test — hier: Miraidon
+@deckCardId2 = 34838c53-3398-45cc-94aa-9582b92ef6d8
+
+
+### 0. Login über Supabase, um einen echten Access Token zu bekommen.
+# Einmal ausführen — der Token wird danach automatisch in {{token}}
+# für alle folgenden Requests gespeichert (siehe Script unten).
+# @name login
+POST {{supabaseUrl}}/auth/v1/token?grant_type=password
+apikey: {{supabaseAnonKey}}
+Content-Type: application/json
+
+{
+  "email": "{{email}}",
+  "password": "{{password}}"
+}
+
+> {%
+  client.global.set("token", response.body.access_token);
+  client.log("Token gespeichert: " + response.body.access_token.substring(0, 20) + "...");
+%}
+
+
+### 1. Alle Decks des eingeloggten Users
+GET {{baseUrl}}/api/decks
+Authorization: Bearer {{token}}
+
+
+### 2. Einzelnes Deck inkl. Karten
+GET {{baseUrl}}/api/decks/{{deckId}}
+Authorization: Bearer {{token}}
+
+
+### 3. Karte hinzufügen
+POST {{baseUrl}}/api/decks/{{deckId}}/cards
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "card_id": "9f2da581-bb19-43d2-b202-4eeda2fa29d7",
+  "quantity": 3,
+  "position": 3,
+  "reasoning": "Trainerkarte zur Unterstützung der Deckstrategie."
+}
+
+### 3b. Karte hinzufügen damit der Bulck löschen immer funktioniert
+POST {{baseUrl}}/api/decks/{{deckId}}/cards
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "card_id": "34838c53-3398-45cc-94aa-9582b92ef6d8",
+  "quantity": 3,
+  "position": 3,
+  "reasoning": "Trainerkarte zur Unterstützung der Deckstrategie."
+}
+
+### 4. Karte komplett löschen (kein amount-Parameter = volle Menge)
+DELETE {{baseUrl}}/api/decks/{{deckId}}/cards/{{deckCardId}}
+Authorization: Bearer {{token}}
+
+
+### 5. Nur 2 Kopien einer Karte löschen (Anzahl wird reduziert, Karte bleibt)
+DELETE {{baseUrl}}/api/decks/{{deckId}}/cards/{{deckCardId}}?amount=2
+Authorization: Bearer {{token}}
+
+
+### 6. Fehlerfall: nicht existierende Karte löschen -> erwartet 404
+DELETE {{baseUrl}}/api/decks/{{deckId}}/cards/00000000-0000-0000-0000-000000000000
+Authorization: Bearer {{token}}
+
+
+### 6b. Zwei unterschiedliche Karten gleichzeitig löschen, jede mit eigener Menge
+# Pikachu (deckCardId): 2 Kopien löschen, Rest bleibt im Deck
+# Miraidon (deckCardId2): 1 Kopie löschen, Rest bleibt im Deck
+POST {{baseUrl}}/api/decks/{{deckId}}/cards/bulk-delete
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "cards": [
+    { "card_id": "{{deckCardId}}", "amount": 2 },
+    { "card_id": "{{deckCardId2}}", "amount": 1 }
+  ]
+}
+
+> {%
+  client.test("Status ist 200", function () {
+    client.assert(response.status === 200, "Erwartet 200, bekommen " + response.status);
+  });
+
+  client.test("Beide Karten wurden ohne Fehler verarbeitet", function () {
+    const results = response.body.results;
+    client.assert(results.length === 2, "Erwartet 2 Ergebnisse, bekommen " + results.length);
+    results.forEach(function (result) {
+      client.assert(!result.error, "Karte " + result.card_id + " hat einen Fehler: " + result.error);
+    });
+  });
+%}
+
+
+### 6c. Bulk-Delete mit einer ungültigen ID dazwischen -> erwartet 207, results zeigt pro Karte den Status
+POST {{baseUrl}}/api/decks/{{deckId}}/cards/bulk-delete
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "cards": [
+    { "card_id": "{{deckCardId}}", "amount": 1 },
+    { "card_id": "00000000-0000-0000-0000-000000000000" }
+  ]
+}
+
+> {%
+  client.test("Status ist 207 (teilweise fehlgeschlagen)", function () {
+    client.assert(response.status === 207, "Erwartet 207, bekommen " + response.status);
+  });
+%}
+
+
+### 7. Fehlerfall: ohne Token -> erwartet 401
+GET {{baseUrl}}/api/decks
+
+
+### 8. Deck erstellen (aktuell not implemented -> erwartet 501)
+POST {{baseUrl}}/api/decks
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "name": "Test Deck"
+}
+
