@@ -1,7 +1,7 @@
 import os
 import psycopg2
 import psycopg2.extras
-from llama_index.embeddings.ollama import OllamaEmbedding
+from llama_index.embeddings.text_embeddings_inference import TextEmbeddingsInference
 
 
 def exact_search_mtg(card_names: list) -> list[dict]:
@@ -46,18 +46,16 @@ def exact_search_mtg(card_names: list) -> list[dict]:
 
 def hybrid_search_mtg(query_text: str, match_count: int = 5) -> list[dict]:
     """
-    Takes a user question, embeds it locally using Ollama (qwen3-embedding),
-    truncates it to 1536 dimensions, and calls the local Postgres Hybrid Search RPC.
+    Takes a user question, embeds it via the local TEI (qwen3-embedding) service,
+    and calls the local Postgres Hybrid Search RPC.
     """
     try:
-        embedder = OllamaEmbedding(
-            model_name="qwen3-embedding",
-            base_url=os.environ.get("OLLAMA_BASE_URL")
+        embedder = TextEmbeddingsInference(
+            model_name="Qwen/Qwen3-Embedding-0.6B",
+            base_url=os.environ.get("EMBEDDER_BASE_URL") or "http://localhost:8082",
         )
 
-        raw_embedding = embedder.get_text_embedding(query_text)
-
-        query_embedding = raw_embedding[:1536]
+        query_embedding = embedder.get_text_embedding(query_text)
 
         vector_str = f"[{','.join(map(str, query_embedding))}]"
 
