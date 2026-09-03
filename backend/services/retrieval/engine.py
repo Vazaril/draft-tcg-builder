@@ -148,11 +148,17 @@ def generate_mtg_answer(message: str, history: list = None) -> Generator[str, An
 
     def generate():
         yield f"data: {json.dumps({'type': 'citations', 'context_used': context_used})}\n\n"
+        try:
+            for chunk in response_stream:
+                if chunk.text:
+                    yield f"data: {json.dumps({'type': 'text', 'content': chunk.text})}\n\n"
 
-        for chunk in response_stream:
-            if chunk.text:
-                yield f"data: {json.dumps({'type': 'text', 'content': chunk.text})}\n\n"
+        except Exception as e:
+            error_msg = f"\n\n**[Connection Error: The AI is currently overloaded. Please try again.]**"
+            yield f"data: {json.dumps({'type': 'text', 'content': error_msg})}\n\n"
+            print(f"Streaming error: {e}")
 
-        yield f"data: {json.dumps({'type': 'done'})}\n\n"
+        finally:
+            yield f"data: {json.dumps({'type': 'done'})}\n\n"
 
     return generate()
