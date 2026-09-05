@@ -28,6 +28,7 @@ only bias results semantically via the query text, not hard-filter by card
 type. The pick model's own knowledge of the card names in each category's
 candidate list is what keeps picks on-category in practice.
 """
+import json
 import os
 
 import httpx
@@ -298,61 +299,97 @@ def _pick_cards_for_category(
     return cards, warnings
 
 
-def generate_deck_proposal(prompt: str) -> dict:
-    intent = extract_intent(prompt)
-    warnings = []
+def _sse(event: dict) -> str:
+    return f"data: {json.dumps(event)}\n\n"
 
-    if intent.confidence == "low":
-        warnings.append(
-            "Prompt war fuer Farben/Archetyp mehrdeutig (confidence=low) - es wurde "
-            "trotzdem mit bestmoeglicher Einschaetzung weitergemacht statt "
-            "abzubrechen. Ergebnis ggf. mit Vorsicht pruefen."
+
+def generate_deck_proposal_stream(prompt: str):
+    """Generator yielding SSE-formatted progress events, same wire format as
+    services/retrieval/engine.py's chat stream (`data: {...}\\n\\n`, JSON per
+    line, `type` field discriminates). Event types:
+
+    - status  {type, stage, message}                - a stage has started
+    - partial {type, stage, cards}                   - a stage's cards, as soon as ready
+    - done    {type, proposal: {...}}                - final result, same shape the
+                                                        old non-streaming endpoint returned
+    - error   {type, message}                        - stream ends after this, no `done`
+
+    `stage` is a stable machine-readable id (intent, lands, creatures,
+    other); `message` is the human-readable (German) status text - see
+    deck-generation-streaming.md for the full contract."""
+    try:
+        yield _sse({"type": "status", "stage": "intent", "message": "Ueberlege Struktur..."})
+        intent = extract_intent(prompt)
+
+        warnings = []
+        if intent.confidence == "low":
+            warnings.append(
+                "Prompt war fuer Farben/Archetyp mehrdeutig (confidence=low) - es wurde "
+                "trotzdem mit bestmoeglicher Einschaetzung weitergemacht statt "
+                "abzubrechen. Ergebnis ggf. mit Vorsicht pruefen."
+            )
+
+        skeleton = build_skeleton(intent)
+        colors_str = "/".join(intent.colors) or "unbestimmt"
+
+        yield _sse({
+            "type": "status",
+            "stage": "skeleton",
+            "message": f"Archetyp: {intent.archetype}, Farben: {colors_str or 'unbestimmt'}",
+            "detail": {"archetype": intent.archetype, "colors": intent.colors, "skeleton": skeleton},
+        })
+
+        all_cards = []
+        seen_ids = set()
+
+        yield _sse({"type": "status", "stage": "lands", "message": "Suche Laender..."})
+        lands, land_warnings = _fetch_basic_lands(intent.colors, skeleton["lands"])
+        all_cards.extend(lands)
+        seen_ids.update(c["card_id"] for c in lands)
+        warnings.extend(land_warnings)
+        yield _sse({"type": "partial", "stage": "lands", "cards": lands})
+
+        yield _sse({"type": "status", "stage": "creatures", "message": "Suche Kreaturen..."})
+        creature_query = (
+            f"{intent.strategy_notes} - Kreaturen (Creatures) fuer ein {intent.archetype}-Deck "
+            f"in den Farben {colors_str}"
         )
-
-    skeleton = build_skeleton(intent)
-    colors_str = "/".join(intent.colors) or "unbestimmt"
-
-    all_cards = []
-    seen_ids = set()
-
-    lands, land_warnings = _fetch_basic_lands(intent.colors, skeleton["lands"])
-    all_cards.extend(lands)
-    seen_ids.update(c["card_id"] for c in lands)
-    warnings.extend(land_warnings)
-
-    creature_query = (
-        f"{intent.strategy_notes} - Kreaturen (Creatures) fuer ein {intent.archetype}-Deck "
-        f"in den Farben {colors_str}"
-    )
-    creature_cards, creature_warnings = _pick_cards_for_category(
-        prompt, creature_query, "Kreaturen", intent.archetype, skeleton["creatures"], seen_ids
-    )
-    all_cards.extend(creature_cards)
-    warnings.extend(creature_warnings)
-
-    other_query = (
-        f"{intent.strategy_notes} - Removal, Interaktion, Card Draw, Combat Tricks fuer "
-        f"ein {intent.archetype}-Deck in den Farben {colors_str}"
-    )
-    other_cards, other_warnings = _pick_cards_for_category(
-        prompt, other_query, "Removal/Interaktion/Sonstiges", intent.archetype, skeleton["other"], seen_ids
-    )
-    all_cards.extend(other_cards)
-    warnings.extend(other_warnings)
-
-    total_cards = sum(c["quantity"] for c in all_cards)
-    if total_cards < TARGET_DECK_SIZE:
-        warnings.append(
-            f"Deck hat nur {total_cards}/{TARGET_DECK_SIZE} Karten - Kandidatenpool war "
-            "vermutlich zu klein oder zu thematisch eng in einer Kategorie. Kein "
-            "automatisches Auffuellen in dieser Version (siehe deck-generation-concept.md "
-            "Schritt 5 fuer den geplanten Repair-Schritt)."
+        creature_cards, creature_warnings = _pick_cards_for_category(
+            prompt, creature_query, "Kreaturen", intent.archetype, skeleton["creatures"], seen_ids
         )
+        all_cards.extend(creature_cards)
+        warnings.extend(creature_warnings)
+        yield _sse({"type": "partial", "stage": "creatures", "cards": creature_cards})
 
-    return {
-        "name": f"Vorschlag: {prompt[:40]}",
-        "archetype": intent.archetype,
-        "colors": intent.colors,
-        "cards": all_cards,
-        "warnings": warnings,
-    }
+        yield _sse({"type": "status", "stage": "other", "message": "Suche Zaubersprueche & Sonstiges..."})
+        other_query = (
+            f"{intent.strategy_notes} - Removal, Interaktion, Card Draw, Combat Tricks fuer "
+            f"ein {intent.archetype}-Deck in den Farben {colors_str}"
+        )
+        other_cards, other_warnings = _pick_cards_for_category(
+            prompt, other_query, "Removal/Interaktion/Sonstiges", intent.archetype, skeleton["other"], seen_ids
+        )
+        all_cards.extend(other_cards)
+        warnings.extend(other_warnings)
+        yield _sse({"type": "partial", "stage": "other", "cards": other_cards})
+
+        total_cards = sum(c["quantity"] for c in all_cards)
+        if total_cards < TARGET_DECK_SIZE:
+            warnings.append(
+                f"Deck hat nur {total_cards}/{TARGET_DECK_SIZE} Karten - Kandidatenpool war "
+                "vermutlich zu klein oder zu thematisch eng in einer Kategorie. Kein "
+                "automatisches Auffuellen in dieser Version (siehe deck-generation-concept.md "
+                "Schritt 5 fuer den geplanten Repair-Schritt)."
+            )
+
+        proposal = {
+            "name": f"Vorschlag: {prompt[:40]}",
+            "archetype": intent.archetype,
+            "colors": intent.colors,
+            "cards": all_cards,
+            "warnings": warnings,
+        }
+        yield _sse({"type": "done", "proposal": proposal})
+
+    except Exception as e:
+        yield _sse({"type": "error", "message": str(e)})
