@@ -84,11 +84,11 @@ def generate_mtg_answer(message: str, history: list = None) -> Generator[str, An
         metadata = res.get("metadata", {})
         node_type = metadata.get("type", "unknown")
 
-        try:
-            node_content = json.loads(metadata.get("_node_content", "{}"))
-            actual_text = node_content.get("text", "")
-        except Exception:
-            actual_text = ""
+        # Real oracle_text/ruling body lives in its own `text` column, not
+        # metadata->_node_content->text - this dump was made with
+        # llama_index's remove_text=True, which leaves that nested field
+        # empty (see db_setup/full_mtg_vector_db_schema.sql).
+        actual_text = res.get("text") or ""
 
         if node_type == "card":
             name = metadata.get("name", "Unknown Card")

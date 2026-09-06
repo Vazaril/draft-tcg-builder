@@ -23,13 +23,16 @@ def exact_search_mtg(card_names: list) -> list[dict]:
 
         placeholders = ', '.join(['%s'] * len(names_lower))
 
-        # Search both card nodes ('name') and ruling nodes ('card_name')
+        # Search both card nodes ('name') and ruling nodes ('card_name').
+        # vecs.data_mtg_nodes is the shape services/ingestion/pipeline.py's
+        # PGVectorStore actually produces (node_id/metadata_) - aliased back
+        # to id/metadata here so callers don't need to care.
         sql_query = f"""
-            SELECT id, metadata 
-            FROM vecs.mtg_nodes 
-            WHERE lower(metadata->>'name') IN ({placeholders})
-               OR lower(metadata->>'card_name') IN ({placeholders})
-            LIMIT 20; 
+            SELECT node_id AS id, metadata_ AS metadata, text
+            FROM vecs.data_mtg_nodes
+            WHERE lower(metadata_->>'name') IN ({placeholders})
+               OR lower(metadata_->>'card_name') IN ({placeholders})
+            LIMIT 20;
         """
 
         cursor.execute(sql_query, names_lower + names_lower)

@@ -1,6 +1,6 @@
-from flask import Blueprint, jsonify, request
+from flask import Blueprint, jsonify, request, Response
 
-from services.generation.deck_generator import generate_deck_proposal
+from services.generation.deck_generator import generate_deck_proposal_stream
 
 decks_bp = Blueprint("decks", __name__, url_prefix="/api/decks")
 
@@ -29,11 +29,7 @@ def generate_deck():
             message="Deck-Generierung ist aktuell nur fuer Magic (game=mtg) verfuegbar."
         ), 400
 
-    try:
-        proposal = generate_deck_proposal(prompt.strip())
-        return jsonify(proposal), 200
-    except Exception as error:
-        return jsonify(
-            message="Deck konnte nicht generiert werden.",
-            error=str(error)
-        ), 500
+    return Response(
+        generate_deck_proposal_stream(prompt.strip()),
+        mimetype="text/event-stream"
+    )
