@@ -2,7 +2,7 @@
 
 A high-performance, local-first Retrieval-Augmented Generation (RAG) backend powering an AI Magic: The Gathering (MTG) Judge and deck generation assistant. 
 
-The backend leverages a local PostgreSQL instance with `pgvector` for hybrid vector/full-text search, local Ollama embeddings, and Google's Gemini API for grounded rules adjudication.
+The backend leverages a local PostgreSQL instance with `pgvector` for hybrid vector/full-text search, a local Text Embeddings Inference (TEI) container running `Qwen/Qwen3-Embedding-0.6B`, and Google's Gemini API for grounded rules adjudication.
 
 ---
 
@@ -17,11 +17,11 @@ The backend leverages a local PostgreSQL instance with `pgvector` for hybrid vec
                       │      (Draft TCG Backend)      │
                       └───────┬───────────────┬───────┘
                               │               │
-           Embeddings (1536d) │               │ LLM Generation (Context + Prompt)
+           Embeddings (1024d) │               │ LLM Generation (Context + Prompt)
                               ▼               ▼
     ┌───────────────────────────────┐   ┌───────────────────────────────┐
-    │       Ollama (Host OS)        │   │       Google Gemini API       │
-    │       qwen3-embedding         │   │       gemini-3.6-flash        │
+    │   TEI (Docker Container)      │   │       Google Gemini API       │
+    │   Qwen/Qwen3-Embedding-0.6B   │   │       gemini-3.6-flash        │
     └───────────────────────────────┘   └───────────────────────────────┘
         │
         │ Vector + FTS Query (RRF)
@@ -36,7 +36,7 @@ The backend leverages a local PostgreSQL instance with `pgvector` for hybrid vec
 ### Key Highlights
 * **Local-First Vector Store:** Persistent PostgreSQL (`pgvector/pgvector:pg16`) running locally in Docker with zero cloud storage limits or egress fees.
 * **Hybrid Search with RRF:** Custom SQL RPC combining `pgvector` cosine similarity distance (`<=>`) and PostgreSQL full-text search (`ts_rank_cd`) via Reciprocal Rank Fusion (RRF).
-* **Cost-Efficient Local Embeddings:** Host-level Ollama runner (`qwen3-embedding`) with on-the-fly MRL dimension slicing (`VectorTruncator`) down to 1536 dimensions.
+* **Cost-Efficient Local Embeddings:** Containerized Hugging Face Text Embeddings Inference (TEI) service running `Qwen/Qwen3-Embedding-0.6B` at its native 1024 dimensions (no truncation).
 * **Accurate Rules Citations:** Gemini adjudicates rulings strictly using retrieved cards, oracle text, and official Wizards of the Coast judge rulings.
 
 ---
@@ -46,7 +46,7 @@ The backend leverages a local PostgreSQL instance with `pgvector` for hybrid vec
 * **Language:** Python 3.11+
 * **Framework:** Flask, Gunicorn
 * **RAG & Vectors:** LlamaIndex, `psycopg2`, `pgvector`
-* **Embeddings:** Ollama (`qwen3-embedding`)
+* **Embeddings:** Hugging Face Text Embeddings Inference (`Qwen/Qwen3-Embedding-0.6B`)
 * **LLM Engine:** Google GenAI SDK (`gemini-3.6-flash`)
 * **Containerization:** Docker & Docker Compose
 
@@ -55,15 +55,8 @@ The backend leverages a local PostgreSQL instance with `pgvector` for hybrid vec
 ## Prerequisites
 
 1. **Docker & Docker Compose** installed.
-2. **Ollama** installed on your host machine.
-   * Pull the embedding model:
-     ```bash
-     ollama pull qwen3-embedding
-     ```
-   * Ensure Ollama is configured to listen on all network interfaces (`0.0.0.0:11434`):
-     * **Linux (systemd):** Run `sudo systemctl edit ollama.service` and add `Environment="OLLAMA_HOST=0.0.0.0:11434"`, then `sudo systemctl restart ollama`.
-     * **macOS:** `launchctl setenv OLLAMA_HOST "0.0.0.0"`
-     * **Windows:** `setx OLLAMA_HOST "0.0.0.0"`
+
+The embedding model runs as its own `embedder` service (built from `embedder/Dockerfile`, based on `ghcr.io/huggingface/text-embeddings-inference`) and is started automatically by `docker compose up` — no separate host installation needed. The container downloads `Qwen/Qwen3-Embedding-0.6B` from Hugging Face on first start and caches it in the `embedder_data` volume.
 
 ---
 
@@ -75,8 +68,8 @@ Create a `.env` file in the root directory of the backend:
 # Database
 DB_URL=postgresql://postgres:yoursecretpassword@vector_db:5432/mtg_vector_db
 
-# Local Ollama
-OLLAMA_BASE_URL=http://host.docker.internal:11434
+# Local TEI Embedder (Qwen3-Embedding-0.6B)
+EMBEDDER_BASE_URL=http://embedder:80
 
 # Gemini API
 GEMINI_API_KEY=your_gemini_api_key_here
@@ -96,7 +89,7 @@ ADMIN_SECRET=your_admin_secret
 ## Getting Started
 1. **Initial Database Seed** (First Run)
 
-Place your master database dump or initialization script in `db_setup/full_mtg_vector_db.sql`. Docker will automatically run this file on first boot to create tables, extensions, and indices.
+`db_setup/full_mtg_vector_db_schema.sql` (schema only, `vec vector(1024)`, no row data) is run automatically by Docker on first boot to create the schema, extension, tables, and the `hybrid_search_mtg_nodes` RPC. Populate the table afterwards via `POST /api/admin/sync-vectors` (re-embeds and ingests all Supabase cards/rulings through the new embedder) or `embed_cards_local.py` for local testing.
 2. **Start the Containers**
 
 ````bash
