@@ -19,15 +19,19 @@ export function ActionDialog({
   description,
   children,
   showCancel = true,
+  open,
+  onOpenChange,
 }: {
   trigger: ReactNode;
   title: string;
   description?: string;
   children: ReactNode;
   showCancel?: boolean;
+  open?: boolean;
+  onOpenChange?: (open: boolean) => void;
 }) {
   return (
-    <AlertDialog>
+    <AlertDialog open={open} onOpenChange={onOpenChange}>
       <AlertDialogTrigger asChild>{trigger}</AlertDialogTrigger>
 
       <AlertDialogContent>

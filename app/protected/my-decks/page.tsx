@@ -3,6 +3,7 @@ import { Plus, Upload } from 'lucide-react';
 import { AddDeckCard } from '@/components/add-deck-card';
 import { DeckCard } from '@/components/deck-card';
 import { Button } from '@/components/ui/button';
+import { DeckSuccessMessage } from '@/components/deck-detail/deck-success-message';
 import {
   PageContent,
   PageDescription,
@@ -10,7 +11,7 @@ import {
   PageShell,
   PageTitle,
 } from '@/components/ui/page-shell';
-import { getUserDecks } from '@/lib/api/decks';
+import { getUserDecks } from '@/lib/api/deckService';
 
 export default async function DecksPage() {
   const decks = await getUserDecks();
@@ -44,6 +45,7 @@ export default async function DecksPage() {
           {decks.map((deck) => (
             <DeckCard key={deck.id} deck={deck} />
           ))}
+          <DeckSuccessMessage />
 
           <AddDeckCard />
         </div>
