@@ -7,8 +7,8 @@ import {
   getDeckById,
   type MagicDeckCardEntry,
   type PokemonDeckCardEntry,
-} from '@/lib/api/decks';
-import { getDeckDetail } from '@/lib/deck-detail';
+} from '@/lib/api/deckService';
+import { getDeckDetail } from '@/lib/deck-detail'
 
 export default async function DeckDetailPage({ params }: { params: Promise<{ deckId: string }> }) {
   const { deckId } = await params;

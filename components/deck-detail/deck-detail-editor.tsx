@@ -6,8 +6,7 @@ import { DeckAnalysisCard } from '@/components/deck-detail/deck-analysis-card';
 import { DeckHeader } from '@/components/deck-detail/deck-header';
 import { DeckListCard } from '@/components/deck-detail/deck-list-card';
 import { SynergyScoreCard } from '@/components/deck-detail/synergy-score-card';
-
-import type { CardOption, Deck } from '@/lib/api/decks';
+import type { CardOption, Deck } from '@/lib/api/deckService';
 import type { DeckDetail } from '@/lib/deck-detail';
 
 export function DeckDetailEditor({

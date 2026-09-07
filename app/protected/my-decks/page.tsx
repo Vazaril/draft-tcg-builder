@@ -11,7 +11,7 @@ import {
   PageShell,
   PageTitle,
 } from '@/components/ui/page-shell';
-import { getUserDecks } from '@/lib/api/decks';
+import { getUserDecks } from '@/lib/api/deckService';
 
 export default async function DecksPage() {
   const decks = await getUserDecks();

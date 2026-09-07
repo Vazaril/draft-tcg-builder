@@ -6,7 +6,7 @@ import { Trash2 } from 'lucide-react';
 
 import { ActionDialog } from '@/components/ui/action-dialog';
 import { Button } from '@/components/ui/button';
-import { deleteDeck } from '@/lib/api/decks';
+import { deleteDeck } from '@/lib/api/deckService';
 
 export function DeckDeleteButton({ deckId, deckName }: { deckId: string; deckName: string }) {
   const router = useRouter();

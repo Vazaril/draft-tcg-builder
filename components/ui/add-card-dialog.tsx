@@ -15,7 +15,7 @@ import {
   type DeckGameType,
   type MagicCardOption,
   type PokemonCardOption,
-} from '@/lib/api/decks';
+} from '@/lib/api/deckService';
 
 export type AddedPokemonDeckCard = {
   id: string;

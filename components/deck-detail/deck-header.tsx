@@ -7,7 +7,7 @@ import { DeckShareButton } from '@/components/deck-detail/deck-share-button';
 import { GoalChips } from '@/components/deck-detail/goal-chips';
 import { Button } from '@/components/ui/button';
 
-import type { Deck } from '@/lib/api/decks';
+import type { Deck } from '@/lib/api/deckService';
 import type { DeckDetail } from '@/lib/deck-detail';
 
 export function DeckHeader({

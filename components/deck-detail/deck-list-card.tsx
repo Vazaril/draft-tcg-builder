@@ -9,7 +9,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { TimedMessage } from '@/components/ui/timed-message';
 
-import { deleteDeckCards, type CardOption, type DeckGameType } from '@/lib/api/decks';
+import { deleteDeckCards, type CardOption, type DeckGameType } from '@/lib/api/deckService';
 import type { DeckListEntry } from '@/lib/deck-detail';
 
 export function DeckListCard({
@@ -99,7 +99,6 @@ export function DeckListCard({
 
         return {
           card_id: gameType === 'magic' ? id.split(':')[0] : id,
-
           amount: deleteAmounts[id] ?? 1,
 
           ...(gameType === 'magic' && card?.zone
@@ -114,34 +113,36 @@ export function DeckListCard({
 
       const results = data.results;
 
+      // Karten-State aktualisieren
       setCards((current) =>
         current.flatMap((card) => {
           const backendCardId = gameType === 'magic' ? card.id.split(':')[0] : card.id;
 
           const result = results.find(
-            (result: {
-              card_id: string;
-              zone?: string;
-              deleted?: boolean;
-              remaining_quantity?: number;
-              error?: string;
-            }) =>
+            (result) =>
               result.card_id === backendCardId &&
-              (gameType === 'pokemon' || !result.zone || result.zone === card.zone)
+              (gameType === 'pokemon' ||
+                !('zone' in result) ||
+                !result.zone ||
+                result.zone === card.zone)
           );
 
-          if (!result || result.error) {
+          // Für diese Karte gab es kein Ergebnis
+          if (!result) {
             return [card];
           }
 
+          // Backend-/Service-Fehler für diese Karte
+          if ('error' in result) {
+            return [card];
+          }
+
+          // Karte wurde vollständig gelöscht
           if (result.deleted) {
             return [];
           }
 
-          if (result.remaining_quantity === undefined) {
-            return [card];
-          }
-
+          // Menge wurde reduziert
           return [
             {
               ...card,
@@ -151,21 +152,28 @@ export function DeckListCard({
         })
       );
 
+      // Nur erfolgreiche vollständige Löschungen
       const deletedResults = results.filter(
-        (result: { deleted?: boolean; error?: string }) => result.deleted === true && !result.error
+        (result) => !('error' in result) && result.deleted === true
       );
 
+      // Vollständig gelöschte Karten aus der Reihenfolge entfernen
       setOrder((current) =>
         current.filter((id) => {
           const card = byId[id];
 
           const backendCardId = gameType === 'magic' ? id.split(':')[0] : id;
 
-          return !deletedResults.some(
-            (result: { card_id: string; zone?: string }) =>
+          return !deletedResults.some((result) => {
+            if ('error' in result) {
+              return false;
+            }
+
+            return (
               result.card_id === backendCardId &&
               (gameType === 'pokemon' || !result.zone || result.zone === card?.zone)
-          );
+            );
+          });
         })
       );
 
