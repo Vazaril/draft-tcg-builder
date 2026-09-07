@@ -303,20 +303,80 @@ def _sse(event: dict) -> str:
     return f"data: {json.dumps(event)}\n\n"
 
 
-def generate_deck_proposal_stream(prompt: str):
+def _resolve_printings(oracle_ids: list[str]) -> dict[str, str]:
+    """Maps oracle_id -> one concrete mtg_cards.id (first printing found).
+    Needed because mtg_deck_cards.card_id is a foreign key to a specific
+    printing, while every card_id in a generated proposal is an oracle_id
+    (deduped across printings, matching the embedded vecs.data_mtg_nodes
+    rows) - see deck-generation-streaming.md. Read-only catalog lookup, so
+    the service-role client is fine here (same as _fetch_basic_lands)."""
+    if not oracle_ids:
+        return {}
+
+    supabase = create_client(os.environ["SUPABASE_URL"], os.environ["SUPABASE_SERVICE_ROLE_KEY"])
+    response = supabase.table("mtg_cards").select("id, oracle_id").in_("oracle_id", oracle_ids).execute()
+
+    mapping = {}
+    for row in response.data or []:
+        mapping.setdefault(row["oracle_id"], row["id"])
+    return mapping
+
+
+def _save_deck(supabase, user_id: str, format_id: str, proposal: dict) -> tuple[str, list[str]]:
+    """Persists the generated proposal as a real mtg_decks row (owned by
+    user_id, via the caller's RLS-scoped client - mtg_decks/mtg_deck_cards
+    are only reachable via user JWT, never the service-role key) plus its
+    mtg_deck_cards rows, all in the "mainboard" zone. Returns
+    (deck_id, skipped_card_names) - a card is skipped if no printing could
+    be resolved for its oracle_id."""
+    deck_insert = (
+        supabase.table("mtg_decks")
+        .insert({"user_id": user_id, "format_id": format_id, "name": proposal["name"]})
+        .execute()
+    )
+    deck_id = deck_insert.data[0]["id"]
+
+    printing_by_oracle_id = _resolve_printings([c["card_id"] for c in proposal["cards"]])
+
+    rows = []
+    skipped = []
+    for card in proposal["cards"]:
+        printing_id = printing_by_oracle_id.get(card["card_id"])
+        if not printing_id:
+            skipped.append(card["name"])
+            continue
+        rows.append({
+            "deck_id": deck_id,
+            "card_id": printing_id,
+            "quantity": card["quantity"],
+            "zone": "mainboard",
+        })
+
+    if rows:
+        supabase.table("mtg_deck_cards").insert(rows).execute()
+
+    return deck_id, skipped
+
+
+def generate_deck_proposal_stream(prompt: str, user_id: str, format_id: str, supabase):
     """Generator yielding SSE-formatted progress events, same wire format as
     services/retrieval/engine.py's chat stream (`data: {...}\\n\\n`, JSON per
     line, `type` field discriminates). Event types:
 
     - status  {type, stage, message}                - a stage has started
     - partial {type, stage, cards}                   - a stage's cards, as soon as ready
-    - done    {type, proposal: {...}}                - final result, same shape the
-                                                        old non-streaming endpoint returned
+    - done    {type, proposal: {...}}                - final result, including the
+                                                        persisted deck's id
     - error   {type, message}                        - stream ends after this, no `done`
 
     `stage` is a stable machine-readable id (intent, lands, creatures,
-    other); `message` is the human-readable (German) status text - see
-    deck-generation-streaming.md for the full contract."""
+    other, saving); `message` is the human-readable (German) status text -
+    see deck-generation-streaming.md for the full contract.
+
+    `supabase` must be a client already authenticated with the requesting
+    user's JWT (see routes/decks.py's get_supabase_and_user()) - the final
+    save step writes to mtg_decks/mtg_deck_cards under that user's RLS
+    policies, not the service-role key."""
     try:
         yield _sse({"type": "status", "stage": "intent", "message": "Ueberlege Struktur..."})
         intent = extract_intent(prompt)
@@ -389,6 +449,19 @@ def generate_deck_proposal_stream(prompt: str):
             "cards": all_cards,
             "warnings": warnings,
         }
+
+        yield _sse({"type": "status", "stage": "saving", "message": "Speichere Deck..."})
+        try:
+            deck_id, skipped = _save_deck(supabase, user_id, format_id, proposal)
+            proposal["deck_id"] = deck_id
+            if skipped:
+                proposal["warnings"].append(
+                    "Nicht gespeichert (keine Druckversion gefunden fuer): " + ", ".join(skipped)
+                )
+        except Exception as e:
+            proposal["deck_id"] = None
+            proposal["warnings"].append(f"Deck konnte nicht gespeichert werden: {e}")
+
         yield _sse({"type": "done", "proposal": proposal})
 
     except Exception as e:
