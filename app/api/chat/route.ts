@@ -16,7 +16,6 @@ export async function POST(req: NextRequest) {
     });
 
     if (!upstreamRes.ok) {
-      console.error(`Python backend returned ${upstreamRes.status}`);
       return new Response(JSON.stringify({ error: 'Backend unavailable' }), {
         status: 502,
         headers: { 'Content-Type': 'application/json' },
@@ -32,8 +31,7 @@ export async function POST(req: NextRequest) {
       },
     });
   } catch (error) {
-    console.error('Route Handler Proxy Error:', error);
-    return new Response(JSON.stringify({ error: 'Failed to connect to backend' }), {
+    return new Response(JSON.stringify({ error: 'Failed to connect to backend', raw: error }), {
       status: 500,
       headers: { 'Content-Type': 'application/json' },
     });
