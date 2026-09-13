@@ -7,7 +7,7 @@ import { Button } from '@/components/ui/button';
 
 const NAV_ITEMS = [
   { name: 'Profile', href: '/protected/profile', icon: User },
-  { name: 'Deck Creation', href: '/protected/deck-creation', icon: Layers },
+  { name: 'Deck Builder', href: '/protected/deck-builder', icon: Layers },
   { name: 'My Decklist', href: '/protected/my-decks', icon: Library },
   { name: 'Search Decks', href: '/protected/search', icon: Search },
 ];

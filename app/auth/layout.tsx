@@ -37,8 +37,8 @@ export default function AuthLayout({ children }: { children: React.ReactNode }) 
                 probabilities before hitting the table.
               </p>
               <p>
-                <strong className={'text-primary'}>Share:</strong> Publish your creations to the
-                global DRAFT network.
+                <strong className={'text-primary'}>Share:</strong> Publish your builds to the global
+                DRAFT network.
               </p>
             </CardContent>
           </Card>
