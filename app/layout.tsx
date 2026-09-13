@@ -3,6 +3,7 @@ import { Pixelify_Sans, Space_Grotesk } from 'next/font/google';
 import { ThemeProvider } from 'next-themes';
 import './globals.css';
 import { siteConfig } from '@/config/site';
+import 'mana-font/css/mana.css';
 
 const defaultUrl = process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : siteConfig.url;
 
