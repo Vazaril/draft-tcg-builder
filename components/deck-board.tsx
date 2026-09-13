@@ -68,7 +68,6 @@ export function DeckBoard() {
           )}
         </CardHeader>
 
-        {/* Main scrollable grid area - Added a darker background to sink the board */}
         <CardContent className="flex-1 p-4 md:p-6 overflow-y-auto grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-3 gap-6 items-start relative custom-scrollbar bg-background/50">
           {error && (
             <div className="absolute top-4 left-1/2 -translate-x-1/2 flex items-center gap-2 p-3 rounded-lg bg-destructive/10 text-destructive border border-destructive/20 z-20 shadow-lg w-[90%] md:w-auto">
@@ -88,10 +87,8 @@ export function DeckBoard() {
             Object.entries(deck.categories).map(([categoryName, cards]) => (
               <div
                 key={categoryName}
-                // Changed: bg-secondary/30 + shadow-inner creates a physical "trough" for the cards to sit in
                 className="w-full flex flex-col bg-secondary/30 rounded-xl border border-border/60 overflow-hidden shadow-inner"
               >
-                {/* Changed: bg-secondary grounds the header, contrasting nicely with the trough */}
                 <div className="p-3 border-b border-border/50 bg-secondary flex items-center justify-between shrink-0">
                   <h3 className="font-semibold text-sm uppercase tracking-wider text-secondary-foreground truncate pr-2">
                     {categoryName}
@@ -105,7 +102,6 @@ export function DeckBoard() {
                   {cards.map((card) => (
                     <div
                       key={card.id}
-                      // Changed: bg-card makes the item pop out of the trough. Added hover:bg-secondary/40 for interaction depth.
                       className="bg-card rounded-lg p-3 shadow-sm border border-border hover:border-primary/60 hover:bg-secondary/40 transition-all duration-200 flex flex-col gap-2 group"
                     >
                       <div className="flex justify-between items-start gap-2">
@@ -117,7 +113,6 @@ export function DeckBoard() {
                           )}
                           <CardTooltip cardName={card.name} />
                         </div>
-                        {/* Changed: Badges now use secondary styling to feel more cohesive */}
                         <span className="text-[11px] font-mono bg-secondary text-secondary-foreground px-1.5 py-0.5 rounded border border-border/50 shrink-0 shadow-sm">
                           CMC {card.cmc}
                         </span>

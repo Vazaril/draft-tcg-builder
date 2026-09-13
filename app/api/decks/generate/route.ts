@@ -22,7 +22,6 @@ export async function POST(req: NextRequest) {
       });
     }
 
-    // Stream the SSE response directly back to the client
     return new Response(upstreamRes.body, {
       status: 200,
       headers: {
