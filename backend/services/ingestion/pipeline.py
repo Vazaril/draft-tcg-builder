@@ -1,24 +1,14 @@
 import os
-from typing import cast, Any, Sequence
+from typing import cast, Any
 
 from supabase import create_client
 from llama_index.core.ingestion import IngestionPipeline
-from llama_index.embeddings.ollama import OllamaEmbedding
+from llama_index.embeddings.text_embeddings_inference import TextEmbeddingsInference
 from llama_index.vector_stores.postgres import PGVectorStore
-from llama_index.core.schema import TransformComponent, BaseNode
+from llama_index.core.schema import TransformComponent
 
 from .loader import fetch_cards_in_batches, fetch_rulings_in_batches, mark_cards_as_embedded, mark_rulings_as_embedded
 from .chunker import generate_card_nodes, generate_ruling_nodes
-
-class VectorTruncator(TransformComponent):
-    """Truncates MRL embeddings down to 1536 dimensions for Supabase pgvector."""
-    dimension: int = 1536
-
-    def __call__(self, nodes: Sequence[BaseNode], **kwargs: Any) -> Sequence[BaseNode]:
-        for node in nodes:
-            if node.embedding:
-                node.embedding = node.embedding[:self.dimension]
-        return nodes
 
 def run_ingestion():
     supabase_url = os.environ.get("SUPABASE_URL")
@@ -30,17 +20,16 @@ def run_ingestion():
         connection_string=db_url,
         table_name="mtg_nodes",
         schema_name="vecs",
-        embed_dim=1536
+        embed_dim=1024
     )
 
-    embedder = OllamaEmbedding(
-        model_name="qwen3-embedding",
-        base_url=os.environ.get("OLLAMA_BASE_URL")
+    embedder = TextEmbeddingsInference(
+        model_name="Qwen/Qwen3-Embedding-0.6B",
+        base_url=os.environ.get("EMBEDDER_BASE_URL") or "http://localhost:8082",
     )
 
     pipeline_transforms: list[TransformComponent] = [
         cast(TransformComponent, cast(Any, embedder)),
-        VectorTruncator(dimension=1536)
     ]
 
     pipeline = IngestionPipeline(

@@ -12,11 +12,18 @@ services:
       - .env
     volumes:
       - .:/app
-    command: gunicorn --bind 0.0.0.0:5000 --workers 1 --timeout 300 --reload --access-logfile - --error-logfile - app:app
+    environment:
+      - EMBEDDER_BASE_URL=http://embedder:80
+      - CARD_PICKER_BASE_URL=http://card_picker:11434
+    command: gunicorn --bind 0.0.0.0:5000 --workers 1 --timeout 900 --reload --access-logfile - --error-logfile - app:app
     restart: unless-stopped
     depends_on:
       vector_db:
         condition: service_healthy
+      embedder:
+        condition: service_started
+      card_picker:
+        condition: service_started
 
   vector_db:
     image: pgvector/pgvector:pg16
@@ -26,16 +33,38 @@ services:
       POSTGRES_USER: postgres
       POSTGRES_PASSWORD: mysecretpassword
       POSTGRES_DB: mtg_vector_db
-    ports:
-      - "5432:5432"
     volumes:
       - vector_db_data:/var/lib/postgresql/data
-      - ./db_setup/full_mtg_vector_db.sql:/docker-entrypoint-initdb.d/init.sql
+      - ./db_setup/full_mtg_vector_db_schema.sql:/docker-entrypoint-initdb.d/init.sql
     healthcheck:
       test: [ "CMD-SHELL", "pg_isready -U postgres -d mtg_vector_db" ]
       interval: 5s
       timeout: 5s
       retries: 5
 
+  embedder:
+    build:
+      context: ./embedder
+      dockerfile: Dockerfile
+    container_name: mtg_qwen_embedder
+    restart: unless-stopped
+    ports:
+      - "127.0.0.1:8082:80"
+    volumes:
+      - embedder_data:/data
+
+  card_picker:
+    build:
+      context: ./card_picker
+      dockerfile: Dockerfile
+    container_name: mtg_card_picker
+    restart: unless-stopped
+    ports:
+      - "127.0.0.1:11434:11434"
+    volumes:
+      - card_picker_data:/root/.ollama
+
 volumes:
   vector_db_data:
+  embedder_data:
+  card_picker_data:
