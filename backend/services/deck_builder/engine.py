@@ -52,6 +52,7 @@ def generate_deck_blueprint(user_prompt: str, explicit_format: str | None,
 
     blueprint = DeckBlueprint.model_validate_json(response.text)
 
+    # Strictly enforce the UI parameters to guarantee safe SQL queries
     if explicit_format:
         blueprint.format = explicit_format.lower()
     if explicit_colors is not None:
