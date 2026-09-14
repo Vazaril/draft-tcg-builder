@@ -3,6 +3,7 @@
 </a>
 
 <p align="center">
+  <img width="1359" height="965" alt="image" src="https://github.com/user-attachments/assets/3eaebda2-305f-4dd2-b796-0e4714cb027d" />
   <strong>The ultimate AI-supported deck building and management tool.</strong><br>
   <em>A Hybrid Agentic RAG Architecture for Zero-Shot Deck Generation and Rules Adjudication in Trading Card Games.</em>
 </p>
