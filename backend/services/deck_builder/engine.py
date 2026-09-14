@@ -1,21 +1,34 @@
 import os
+import json
 import concurrent.futures
 from google import genai
 from google.genai import types
 
-from .schemas import DeckBlueprint, CardSelection
-from ..retrieval.search import hybrid_search_mtg
+from .schemas import DeckBlueprint, CategoryScores
+from ..retrieval.search import filtered_hybrid_search_mtg
 
 gemini_client = genai.Client(api_key=os.environ.get("GEMINI_API_KEY"))
 gemini_model = os.environ.get("GEMINI_MODEL")
 
 
+def _sse(event: dict) -> str:
+    return f"data: {json.dumps(event)}\n\n"
+
+
+def extract_oracle_text(metadata: dict) -> str:
+    """Extracts card text from LlamaIndex's nested _node_content string."""
+    try:
+        node_content = json.loads(metadata.get("_node_content", "{}"))
+        return node_content.get("text", "")
+    except Exception:
+        return ""
+
+
 def generate_deck_blueprint(user_prompt: str) -> DeckBlueprint:
-    """Step 1: Use the LLM to design the strategy and category quotas."""
     system_instruction = (
         "You are an expert MTG deck builder. Analyze the user's request and construct a structural blueprint. "
-        "Define the exact color identity, format, and package categories (e.g., Ramp, Draw, Synergy, Removal). "
-        "The total category quotas plus the land count MUST equal exactly the deck size (100 for Commander, 60 for Standard)."
+        "Define color identity, format, and package categories (e.g., Ramp, Draw, Synergy). "
+        "Category quotas + land count MUST equal the format deck size exactly (100 for Commander, 60 for 60-card formats)."
     )
 
     response = gemini_client.models.generate_content(
@@ -31,40 +44,41 @@ def generate_deck_blueprint(user_prompt: str) -> DeckBlueprint:
     return DeckBlueprint.model_validate_json(response.text)
 
 
-def clean_card_data(metadata: dict) -> dict:
-    """Strips LlamaIndex bloat so the LLM only reads relevant data."""
-    return {
-        "id": metadata.get("oracle_id"),
-        "name": metadata.get("name", "Unknown"),
-        "cmc": metadata.get("cmc", 0),
-        "type": metadata.get("type", "card"),
-        "colors": metadata.get("colors", []),
-        "oracle_text": metadata.get("text", "")
-    }
+def generate_mana_base(land_count: int, color_identity: list[str]) -> list[dict]:
+    if not color_identity or color_identity == ["C"]:
+        return [{"card_id": "basic-c", "name": "Wastes", "quantity": land_count, "type": "Basic Land"}]
+
+    split = land_count // len(color_identity)
+    remainder = land_count % len(color_identity)
+    basic_map = {"W": "Plains", "U": "Island", "B": "Swamp", "R": "Mountain", "G": "Forest"}
+
+    lands = []
+    for i, color in enumerate(color_identity):
+        if color in basic_map:
+            lands.append({
+                "card_id": f"basic-{color.lower()}",
+                "name": basic_map[color],
+                "quantity": split + (1 if i < remainder else 0),
+                "type": "Basic Land"
+            })
+    return lands
 
 
-def is_color_legal(card_colors: list[str], allowed_colors: list[str]) -> bool:
-    """Strictly enforces color identity in Python to prevent LLM mistakes."""
-    if not card_colors:
-        return True
-    return all(color in allowed_colors for color in card_colors)
-
-
-def select_synergy_cards_with_llm(category_name: str, quota: int, candidates: list[dict], commander: str) -> list[dict]:
-    """Step 3: A focused LLM call just for selecting cards within a single category."""
+def _score_category_candidates(category_name: str, quota: int, candidates: list[dict], commander: str,
+                               format_name: str) -> list[dict]:
     if not candidates:
         return []
 
-    # Format cleanly for the LLM prompt to save tokens
+    max_copies = 1 if format_name.lower() == "commander" else 4
+
     candidate_text = "\n".join([
-        f"- {c['name']} (Type: {c['type']}, CMC: {c['cmc']}): {c['oracle_text']}"
+        f"- ID: {c['id']} | {c['name']} (CMC: {c['cmc']}): {c['oracle_text']}"
         for c in candidates
     ])
 
     prompt = (
-        f"You are selecting cards for the '{category_name}' category of a deck led by {commander}.\n"
-        f"Select EXACTLY {quota} cards from the candidates below that offer the best synergy and mana curve.\n"
-        f"Output ONLY a JSON list of the exact card names chosen.\n\n"
+        f"Score these candidates for the '{category_name}' package in a {format_name} deck led by {commander}.\n"
+        f"Rate each card from 0 to 10 based on synergy. Max copies per card: {max_copies}.\n\n"
         f"Candidates:\n{candidate_text}"
     )
 
@@ -75,86 +89,126 @@ def select_synergy_cards_with_llm(category_name: str, quota: int, candidates: li
             config=types.GenerateContentConfig(
                 temperature=0.2,
                 response_mime_type="application/json",
-                response_schema=CardSelection
+                response_schema=CategoryScores
             )
         )
+        scores_data = CategoryScores.model_validate_json(response.text).scores
+        scores_by_id = {s.card_id: s for s in scores_data}
 
-        selection = CardSelection.model_validate_json(response.text)
-        selected_names = [name.lower().strip() for name in selection.selected_card_names]
+        scored_candidates = []
+        for c in candidates:
+            score_obj = scores_by_id.get(c["id"])
+            if score_obj and score_obj.score > 0:
+                c["score"] = score_obj.score
+                c["quantity"] = min(max(1, score_obj.quantity), max_copies)
+                c["reasoning"] = score_obj.reasoning
+                scored_candidates.append(c)
+            else:
+                c["score"] = 1
+                c["quantity"] = 1
+                c["reasoning"] = "RAG search match"
+                scored_candidates.append(c)
 
-        # Map the LLM's text output back to the rich Python dictionaries
-        return [c for c in candidates if c['name'].lower().strip() in selected_names]
+        scored_candidates.sort(key=lambda x: x["score"], reverse=True)
+        return scored_candidates
 
     except Exception as e:
-        print(f"LLM selection failed for {category_name}: {e}")
-        return []
+        print(f"Scoring fallback for {category_name}: {e}")
+        for c in candidates:
+            c["score"] = 1
+            c["quantity"] = 1
+            c["reasoning"] = "Vector fallback"
+        return candidates
 
 
-def build_deck_pipeline(user_prompt: str) -> dict:
-    """Master Orchestrator."""
-    blueprint = generate_deck_blueprint(user_prompt)
+def generate_deck_stream(user_prompt: str):
+    try:
+        yield _sse({"type": "status", "stage": "intent", "message": "Designing deck blueprint..."})
+        blueprint = generate_deck_blueprint(user_prompt)
 
-    decklist = {
-        "commander": blueprint.commander,
-        "format": blueprint.format,
-        "color_identity": blueprint.color_identity,
-        "categories": {},
-        "lands": generate_mana_base(blueprint.land_count, blueprint.color_identity)  # Standard Python generation
-    }
+        decklist = {
+            "commander": blueprint.commander,
+            "format": blueprint.format,
+            "color_identity": blueprint.color_identity,
+            "categories": {},
+            "lands": generate_mana_base(blueprint.land_count, blueprint.color_identity)
+        }
 
-    seen_cards = set([blueprint.commander.lower()] if blueprint.commander else [])
+        yield _sse({
+            "type": "partial",
+            "stage": "blueprint",
+            "message": f"Blueprint created. Searching for {len(blueprint.categories)} packages...",
+            "data": decklist
+        })
 
-    # Run the LLM category selections concurrently to keep response times under 5 seconds
-    with concurrent.futures.ThreadPoolExecutor(max_workers=6) as executor:
-        future_to_category = {}
+        seen_ids = set()
+        if blueprint.commander:
+            seen_ids.add(blueprint.commander.lower())
 
-        for category in blueprint.categories:
-            # 1. Fetch raw candidates from Postgres
-            raw_candidates = hybrid_search_mtg(
-                query_text=category.search_query,
-                match_count=category.quota * 4
-            )
+        with concurrent.futures.ThreadPoolExecutor(max_workers=6) as executor:
+            future_to_category = {}
 
-            # 2. Pre-filter in Python to guarantee legality and strip JSON bloat
-            clean_candidates = []
-            for c in raw_candidates:
-                meta = c.get("metadata", {})
-                card_name = meta.get("name", "").strip()
+            for category in blueprint.categories:
+                # 1. Pre-filtered search via PostgreSQL
+                raw_candidates = filtered_hybrid_search_mtg(
+                    query_text=category.search_query,
+                    color_identity=blueprint.color_identity,
+                    format_name=blueprint.format,
+                    match_count=max(category.quota * 3, 15)
+                )
 
-                if card_name and card_name.lower() not in seen_cards:
-                    if meta.get("type") == "card" and is_color_legal(meta.get("colors", []), blueprint.color_identity):
-                        clean_candidates.append(clean_card_data(meta))
-                        seen_cards.add(card_name.lower())
+                # 2. Extract full oracle text from _node_content
+                clean_candidates = []
+                for row in raw_candidates:
+                    meta = row.get("metadata", {})
+                    card_id = meta.get("oracle_id", row.get("id"))
+                    name = meta.get("name", "Unknown")
 
-            # 3. Dispatch the filtered list to a concurrent LLM thread for synergy selection
-            future = executor.submit(
-                select_synergy_cards_with_llm,
-                category.name,
-                category.quota,
-                clean_candidates,
-                blueprint.commander
-            )
-            future_to_category[future] = category.name
+                    if card_id not in seen_ids and name.lower() not in seen_ids:
+                        clean_candidates.append({
+                            "id": card_id,
+                            "name": name,
+                            "cmc": meta.get("cmc", 0),
+                            "colors": meta.get("colors", []),
+                            "type": meta.get("type", "card"),
+                            "oracle_text": extract_oracle_text(meta)
+                        })
 
-        # 4. Gather results as threads complete
-        for future in concurrent.futures.as_completed(future_to_category):
-            cat_name = future_to_category[future]
-            decklist["categories"][cat_name] = future.result()
+                # 3. Concurrent scoring
+                future = executor.submit(
+                    _score_category_candidates,
+                    category.name,
+                    category.quota,
+                    clean_candidates,
+                    blueprint.commander or "the deck",
+                    blueprint.format
+                )
+                future_to_category[future] = (category.name, category.quota)
 
-    return decklist
+            # 4. Greedy knapsack slot allocation
+            for future in concurrent.futures.as_completed(future_to_category):
+                cat_name, cat_quota = future_to_category[future]
+                scored_cards = future.result()
 
+                selected_for_cat = []
+                remaining_slots = cat_quota
 
-def generate_mana_base(land_count: int, color_identity: list[str]) -> list[dict]:
-    lands = []
-    if not color_identity or color_identity == ["C"]:
-        return [{"name": "Wastes", "quantity": land_count}]
+                for card in scored_cards:
+                    if remaining_slots <= 0:
+                        break
+                    if card["id"] not in seen_ids and card["name"].lower() not in seen_ids:
+                        qty = min(card["quantity"], remaining_slots)
+                        card["quantity"] = qty
+                        selected_for_cat.append(card)
+                        seen_ids.add(card["id"])
+                        seen_ids.add(card["name"].lower())
+                        remaining_slots -= qty
 
-    split = land_count // len(color_identity)
-    remainder = land_count % len(color_identity)
-    basic_map = {"W": "Plains", "U": "Island", "B": "Swamp", "R": "Mountain", "G": "Forest"}
+                decklist["categories"][cat_name] = selected_for_cat
+                yield _sse({"type": "partial", "stage": "category", "category": cat_name, "cards": selected_for_cat})
 
-    for i, color in enumerate(color_identity):
-        qty = split + (1 if i < remainder else 0)
-        if color in basic_map:
-            lands.append({"name": basic_map[color], "quantity": qty})
-    return lands
+        yield _sse({"type": "status", "stage": "saving", "message": "Finalizing deck..."})
+        yield _sse({"type": "done", "proposal": decklist})
+
+    except Exception as e:
+        yield _sse({"type": "error", "message": str(e)})
