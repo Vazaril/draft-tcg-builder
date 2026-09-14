@@ -1,5 +1,5 @@
-from flask import Blueprint, jsonify, request
-from services.deck_builder.engine import build_deck_pipeline
+from flask import Blueprint, jsonify, request, Response
+from services.deck_builder.engine import generate_deck_stream
 
 decks_bp = Blueprint("decks", __name__, url_prefix="/api/decks")
 
@@ -13,10 +13,7 @@ def generate_deck():
         return jsonify(error="prompt is required"), 400
 
     try:
-        # Trigger the 5-step orchestrator pipeline
-        decklist = build_deck_pipeline(prompt)
-        return jsonify(decklist), 200
-
+        stream_generator = generate_deck_stream(prompt)
+        return Response(stream_generator, mimetype='text/event-stream')
     except Exception as exc:
-        print(f"Deck generation failed: {exc}")
-        return jsonify(error=str(exc)), 500
+        return jsonify(error=str(exc)), 502
