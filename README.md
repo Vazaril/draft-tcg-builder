@@ -18,7 +18,7 @@
 
 ## About the Project
 
-Generating valid, synergistic decks for Trading Card Games (TCGs) like *Magic: The Gathering* (MTG) is a highly constrained combinatorial challenge. Standard Large Language Models (LLMs) struggle with this zero-shot task due to card hallucinations, incorrect mathematical quotas, and a lack of format legality awareness.
+Generating valid, synergistic decks for Trading Card Games (TCGs) like _Magic: The Gathering_ (MTG) is a highly constrained combinatorial challenge. Standard Large Language Models (LLMs) struggle with this zero-shot task due to card hallucinations, incorrect mathematical quotas, and a lack of format legality awareness.
 
 **DRAFT** solves this by utilizing a custom **Agentic Retrieval-Augmented Generation (RAG)** architecture. By decoupling the generation process into a structural blueprint phase and a hybrid retrieval-scoring phase, DRAFT enforces strict game rules at the database level while leveraging the LLM for creative synergy and orchestration.
 
@@ -27,17 +27,20 @@ This project was developed as part of a university course on Web Applications an
 ## Features
 
 ### AI Deck Builder
-- **Zero-Shot Generation:** Simply prompt the AI (e.g., *"Build a Graveyard deck featuring The Gitrog Monster"*), and the system will design a mathematically perfect 60-card or 100-card deck.
-- **Strict Format & Color Constraints:** A custom PostgreSQL hybrid search filters out illegal cards at the database level *before* the LLM evaluates them, ensuring 100% format legality.
+
+- **Zero-Shot Generation:** Simply prompt the AI (e.g., _"Build a Graveyard deck featuring The Gitrog Monster"_), and the system will design a mathematically perfect 60-card or 100-card deck.
+- **Strict Format & Color Constraints:** A custom PostgreSQL hybrid search filters out illegal cards at the database level _before_ the LLM evaluates them, ensuring 100% format legality.
 - **Explicit Card Requests:** Safely parses explicitly requested cards from the user prompt and matches them perfectly using a punctuation-agnostic regex search, bypassing vector approximations.
 - **Real-Time Streaming:** Watch your deck being built in real-time via Server-Sent Events (SSE) as the Agentic RAG pipeline searches, scores, and allocates cards into synergistic categories (Ramp, Removal, Win Conditions, etc.).
 
 ### MTG Judge Chat
+
 - **Expert Rules Adjudicator:** Ask complex rules questions and receive answers grounded entirely in official MTG rulings and Oracle text.
 - **LLM-Aided Query Rewriting:** The chatbot analyzes multi-turn conversational history and rewrites ambiguities into highly optimized, standalone search queries.
 - **Entity Extraction:** Automatically identifies and tags specific cards, keywords, and rule numbers (e.g., `[[card:Ramunap Excavator]]`, `[[rule:702.12b]]`) to guarantee precise relational database lookups alongside semantic vector searches.
 
 ### Theming
+
 - Fully integrated Next-Themes support featuring Light, Dark, System, and a custom **Classic** MTG-inspired theme.
 - Dynamic SVGs and favicons that automatically adapt to the user's active color palette.
 
@@ -54,19 +57,23 @@ DRAFT is built on a modern, decoupled stack:
 ## Getting Started
 
 ### Prerequisites
+
 - Node.js (v18+)
 - Python (3.10+)
 - [Ollama](https://ollama.ai/) installed locally with the `qwen3-embedding` model pulled.
 - A [Supabase](https://supabase.com/) project.
 
 ### 1. Clone the repository
+
 ```bash
 git clone [https://github.com/Vazaril/draft-tcg-builder.git](https://github.com/Vazaril/draft-tcg-builder.git)
 cd draft-tcg-builder
 ```
+
 ### 2. Frontend Setup
 
 Install the Next.js dependencies:
+
 ```bash
 npm install
 ```
@@ -80,6 +87,7 @@ python -m venv venv
 source venv/bin/activate  # On Windows: venv\Scripts\activate
 pip install -r requirements.txt
 ```
+
 ### 4. Database Migrations
 
 Run the SQL scripts located in the /supabase/migrations folder in your Supabase SQL Editor. This will set up the vecs.mtg_nodes table, pgvector extensions, and the custom filtered_hybrid_search_mtg_nodes PL/pgSQL functions required for the RRF retrieval.
@@ -91,6 +99,7 @@ Start the Next.js development server and your Python backend service:
 ```bash
 npm run dev
 ```
+
 The application will be available at http://localhost:3000.
 
 ## Environment Variables
