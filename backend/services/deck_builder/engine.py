@@ -24,11 +24,19 @@ def extract_oracle_text(metadata: dict) -> str:
         return ""
 
 
-def generate_deck_blueprint(user_prompt: str) -> DeckBlueprint:
+def generate_deck_blueprint(user_prompt: str, explicit_format: str | None,
+                            explicit_colors: list[str] | None) -> DeckBlueprint:
+    constraint_text = ""
+    if explicit_format or explicit_colors is not None:
+        fmt = explicit_format or "Auto-detect"
+        cols = explicit_colors if explicit_colors is not None else "Auto-detect"
+        constraint_text = f"\nCRITICAL CONSTRAINTS: You MUST use format='{fmt}' and color_identity={cols}. Do not deviate."
+
     system_instruction = (
-        "You are an expert MTG deck builder. Analyze the user's request and construct a structural blueprint. "
-        "Define color identity, format, and package categories (e.g., Ramp, Draw, Synergy). "
-        "Category quotas + land count MUST equal the format deck size exactly (100 for Commander, 60 for 60-card formats)."
+            "You are an expert MTG deck builder. Analyze the user's request and construct a structural blueprint. "
+            "Define color identity, format, and package categories (e.g., Ramp, Draw, Synergy). "
+            "Category quotas + land count MUST equal the format deck size exactly (100 for Commander, 60 for 60-card formats)."
+            + constraint_text
     )
 
     response = gemini_client.models.generate_content(
@@ -41,7 +49,16 @@ def generate_deck_blueprint(user_prompt: str) -> DeckBlueprint:
             response_schema=DeckBlueprint
         )
     )
-    return DeckBlueprint.model_validate_json(response.text)
+
+    blueprint = DeckBlueprint.model_validate_json(response.text)
+
+    # Strictly enforce the UI parameters to guarantee safe SQL queries
+    if explicit_format:
+        blueprint.format = explicit_format.lower()
+    if explicit_colors is not None:
+        blueprint.color_identity = explicit_colors
+
+    return blueprint
 
 
 def generate_mana_base(land_count: int, color_identity: list[str]) -> list[dict]:
@@ -121,10 +138,11 @@ def _score_category_candidates(category_name: str, quota: int, candidates: list[
         return candidates
 
 
-def generate_deck_stream(user_prompt: str):
+def generate_deck_stream(user_prompt: str, explicit_format: str | None = None, explicit_colors: list[str] | None = None):
     try:
         yield _sse({"type": "status", "stage": "intent", "message": "Designing deck blueprint..."})
-        blueprint = generate_deck_blueprint(user_prompt)
+
+        blueprint = generate_deck_blueprint(user_prompt, explicit_format, explicit_colors)
 
         decklist = {
             "commander": blueprint.commander,
