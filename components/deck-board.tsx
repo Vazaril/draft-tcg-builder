@@ -122,6 +122,7 @@ export function DeckBoard() {
                 <SelectItem value="auto">Auto-detect</SelectItem>
                 <SelectItem value="commander">Commander</SelectItem>
                 <SelectItem value="standard">Standard</SelectItem>
+                <SelectItem value="modern">Modern</SelectItem>
               </SelectContent>
             </Select>
 

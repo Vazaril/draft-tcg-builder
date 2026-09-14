@@ -1,110 +1,120 @@
-<a href="https://demo-nextjs-with-supabase.vercel.app/">
-  <img alt="Next.js and Supabase Starter Kit - the fastest way to build apps with Next.js and Supabase" src="https://demo-nextjs-with-supabase.vercel.app/opengraph-image.png">
-  <h1 align="center">Next.js and Supabase Starter Kit</h1>
+<a>
+  <h1 align="center">DRAFT</h1>
 </a>
 
 <p align="center">
- The fastest way to build apps with Next.js and Supabase
+  <strong>The ultimate AI-supported deck building and management tool.</strong><br>
+  <em>A Hybrid Agentic RAG Architecture for Zero-Shot Deck Generation and Rules Adjudication in Trading Card Games.</em>
 </p>
 
 <p align="center">
+  <a href="#about-the-project"><strong>About</strong></a> ·
   <a href="#features"><strong>Features</strong></a> ·
-  <a href="#demo"><strong>Demo</strong></a> ·
-  <a href="#deploy-to-vercel"><strong>Deploy to Vercel</strong></a> ·
-  <a href="#clone-and-run-locally"><strong>Clone and run locally</strong></a> ·
-  <a href="#feedback-and-issues"><strong>Feedback and issues</strong></a>
-  <a href="#more-supabase-examples"><strong>More Examples</strong></a>
+  <a href="#architecture--tech-stack"><strong>Architecture</strong></a> ·
+  <a href="#getting-started"><strong>Getting Started</strong></a> ·
+  <a href="#environment-variables"><strong>Environment Variables</strong></a>
 </p>
 <br/>
 
+## About the Project
+
+Generating valid, synergistic decks for Trading Card Games (TCGs) like *Magic: The Gathering* (MTG) is a highly constrained combinatorial challenge. Standard Large Language Models (LLMs) struggle with this zero-shot task due to card hallucinations, incorrect mathematical quotas, and a lack of format legality awareness.
+
+**DRAFT** solves this by utilizing a custom **Agentic Retrieval-Augmented Generation (RAG)** architecture. By decoupling the generation process into a structural blueprint phase and a hybrid retrieval-scoring phase, DRAFT enforces strict game rules at the database level while leveraging the LLM for creative synergy and orchestration.
+
+This project was developed as part of a university course on Web Applications and LLM Integration (University of Giessen, 2026).
+
 ## Features
 
-- Works across the entire [Next.js](https://nextjs.org) stack
-  - App Router
-  - Pages Router
-  - Proxy
-  - Client
-  - Server
-  - It just works!
-- supabase-ssr. A package to configure Supabase Auth to use cookies
-- Password-based authentication block installed via the [Supabase UI Library](https://supabase.com/ui/docs/nextjs/password-based-auth)
-- Styling with [Tailwind CSS](https://tailwindcss.com)
-- Components with [shadcn/ui](https://ui.shadcn.com/)
-- Optional deployment with [Supabase Vercel Integration and Vercel deploy](#deploy-your-own)
-  - Environment variables automatically assigned to Vercel project
+### AI Deck Builder
+- **Zero-Shot Generation:** Simply prompt the AI (e.g., *"Build a Graveyard deck featuring The Gitrog Monster"*), and the system will design a mathematically perfect 60-card or 100-card deck.
+- **Strict Format & Color Constraints:** A custom PostgreSQL hybrid search filters out illegal cards at the database level *before* the LLM evaluates them, ensuring 100% format legality.
+- **Explicit Card Requests:** Safely parses explicitly requested cards from the user prompt and matches them perfectly using a punctuation-agnostic regex search, bypassing vector approximations.
+- **Real-Time Streaming:** Watch your deck being built in real-time via Server-Sent Events (SSE) as the Agentic RAG pipeline searches, scores, and allocates cards into synergistic categories (Ramp, Removal, Win Conditions, etc.).
 
-## Demo
+### MTG Judge Chat
+- **Expert Rules Adjudicator:** Ask complex rules questions and receive answers grounded entirely in official MTG rulings and Oracle text.
+- **LLM-Aided Query Rewriting:** The chatbot analyzes multi-turn conversational history and rewrites ambiguities into highly optimized, standalone search queries.
+- **Entity Extraction:** Automatically identifies and tags specific cards, keywords, and rule numbers (e.g., `[[card:Ramunap Excavator]]`, `[[rule:702.12b]]`) to guarantee precise relational database lookups alongside semantic vector searches.
 
-You can view a fully working demo at [demo-nextjs-with-supabase.vercel.app](https://demo-nextjs-with-supabase.vercel.app/).
+### Theming
+- Fully integrated Next-Themes support featuring Light, Dark, System, and a custom **Classic** MTG-inspired theme.
+- Dynamic SVGs and favicons that automatically adapt to the user's active color palette.
 
-## Deploy to Vercel
+## Architecture & Tech Stack
 
-Vercel deployment will guide you through creating a Supabase account and project.
+DRAFT is built on a modern, decoupled stack:
 
-After installation of the Supabase integration, all relevant environment variables will be assigned to the project so the deployment is fully functioning.
+- **Frontend:** Next.js (App Router), React, Tailwind CSS, shadcn/ui.
+- **AI & Orchestration:** Google Gemini (`gemini-3.5-flash-lite` or similar) via the `google-genai` SDK.
+- **Embeddings:** Local Ollama running the `qwen3-embedding` model, utilizing a custom LlamaIndex pipeline to chunk and truncate vectors to 1536 dimensions.
+- **Database:** Supabase (PostgreSQL).
+- **Search Engine:** Custom PL/pgSQL functions utilizing `pgvector` (cosine distance) and `tsvector` (full-text search) merged via Reciprocal Rank Fusion (RRF).
 
-[![Deploy with Vercel](https://vercel.com/button)](https://vercel.com/new/clone?repository-url=https%3A%2F%2Fgithub.com%2Fvercel%2Fnext.js%2Ftree%2Fcanary%2Fexamples%2Fwith-supabase&project-name=nextjs-with-supabase&repository-name=nextjs-with-supabase&demo-title=nextjs-with-supabase&demo-description=This+starter+configures+Supabase+Auth+to+use+cookies%2C+making+the+user%27s+session+available+throughout+the+entire+Next.js+app+-+Client+Components%2C+Server+Components%2C+Route+Handlers%2C+Server+Actions+and+Middleware.&demo-url=https%3A%2F%2Fdemo-nextjs-with-supabase.vercel.app%2F&external-id=https%3A%2F%2Fgithub.com%2Fvercel%2Fnext.js%2Ftree%2Fcanary%2Fexamples%2Fwith-supabase&demo-image=https%3A%2F%2Fdemo-nextjs-with-supabase.vercel.app%2Fopengraph-image.png)
+## Getting Started
 
-The above will also clone the Starter kit to your GitHub, you can clone that locally and develop locally.
+### Prerequisites
+- Node.js (v18+)
+- Python (3.10+)
+- [Ollama](https://ollama.ai/) installed locally with the `qwen3-embedding` model pulled.
+- A [Supabase](https://supabase.com/) project.
 
-If you wish to just develop locally and not deploy to Vercel, [follow the steps below](#clone-and-run-locally).
+### 1. Clone the repository
+```bash
+git clone [https://github.com/Vazaril/draft-tcg-builder.git](https://github.com/Vazaril/draft-tcg-builder.git)
+cd draft-tcg-builder
+```
+### 2. Frontend Setup
 
-## Clone and run locally
-
-1. You'll first need a Supabase project which can be made [via the Supabase dashboard](https://database.new)
-
-2. Create a Next.js app using the Supabase Starter template npx command
-
-   ```bash
-   npx create-next-app --example with-supabase with-supabase-app
-   ```
-
-   ```bash
-   yarn create next-app --example with-supabase with-supabase-app
-   ```
-
-   ```bash
-   pnpm create next-app --example with-supabase with-supabase-app
-   ```
-
-3. Use `cd` to change into the app's directory
-
-   ```bash
-   cd with-supabase-app
-   ```
-
-4. Rename `.env.example` to `.env.local` and update the following:
-
-```env
-NEXT_PUBLIC_SUPABASE_URL=[INSERT SUPABASE PROJECT URL]
-NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY=[INSERT SUPABASE PROJECT API PUBLISHABLE OR ANON KEY]
+Install the Next.js dependencies:
+```bash
+npm install
 ```
 
-> [!NOTE]
-> This example uses `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY`, which refers to Supabase's new **publishable** key format.
-> Both legacy **anon** keys and new **publishable** keys can be used with this variable name during the transition period. Supabase's dashboard may show `NEXT_PUBLIC_SUPABASE_ANON_KEY`; its value can be used in this example.
-> See the [full announcement](https://github.com/orgs/supabase/discussions/29260) for more information.
+### 3. Backend & AI Setup
 
-Both `NEXT_PUBLIC_SUPABASE_URL` and `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY` can be found in [your Supabase project's API settings](https://supabase.com/dashboard/project/_?showConnect=true)
+Set up your Python virtual environment and install the backend dependencies:
 
-5. You can now run the Next.js local development server:
+```bash
+python -m venv venv
+source venv/bin/activate  # On Windows: venv\Scripts\activate
+pip install -r requirements.txt
+```
+### 4. Database Migrations
 
-   ```bash
-   npm run dev
-   ```
+Run the SQL scripts located in the /supabase/migrations folder in your Supabase SQL Editor. This will set up the vecs.mtg_nodes table, pgvector extensions, and the custom filtered_hybrid_search_mtg_nodes PL/pgSQL functions required for the RRF retrieval.
 
-   The starter kit should now be running on [localhost:3000](http://localhost:3000/).
+### 5. Run the Application
 
-6. This template comes with the default shadcn/ui style initialized. If you instead want other ui.shadcn styles, delete `components.json` and [re-install shadcn/ui](https://ui.shadcn.com/docs/installation/next)
+Start the Next.js development server and your Python backend service:
 
-> Check out [the docs for Local Development](https://supabase.com/docs/guides/getting-started/local-development) to also run Supabase locally.
+```bash
+npm run dev
+```
+The application will be available at http://localhost:3000.
 
-## Feedback and issues
+## Environment Variables
 
-Please file feedback and issues over on the [Supabase GitHub org](https://github.com/supabase/supabase/issues/new/choose).
+Rename .env.example to .env.local in the root directory and update the following values:
 
-## More Supabase examples
+```bash
+# Next Configuration
+NEXT_PUBLIC_SUPABASE_URL=your_supabase_project_url
+NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY=your_supabase_anon_key
+SUPABASE_SERVICE_ROLE_KEY=your_supabase_service_key
+PYTHON_BACKEND_URL=http://127.0.0.1:5001
 
-- [Next.js Subscription Payments Starter](https://github.com/vercel/nextjs-subscription-payments)
-- [Cookie-based Auth and the Next.js 13 App Router (free course)](https://youtube.com/playlist?list=PL5S4mPUpp4OtMhpnp93EFSo42iQ40XjbF)
-- [Supabase Auth and the Next.js App Router](https://github.com/supabase/supabase/tree/master/examples/auth/nextjs)
+# Backend Configuration
+GEMINI_API_KEY=api_key
+GEMINI_MODEL=gemini-3.5-flash-lite
+OLLAMA_BASE_URL=http://host.docker.internal:11434
+SUPABASE_URL=https://your_project.supabase.co
+DB_URL=DB_URL=postgresql://postgres:[PASSWORD]@[HOST]:5432/postgres
+ADMIN_SECRET=your-secret-pass-key
+```
+
+## Authors
+
+DRAFT Team
+
+This software is provided as-is for academic and educational purposes.
