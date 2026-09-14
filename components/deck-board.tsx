@@ -1,8 +1,8 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useDeckStream } from '@/hooks/use-deck-stream';
-import { Loader2, AlertCircle, Settings2 } from 'lucide-react';
+import { Loader2, Settings2, Save } from 'lucide-react';
 import { ChatInput } from '@/components/chat-input';
 import { CardTooltip } from '@/components/card-tooltip';
 import { MTGMarkdown } from '@/components/mtg-markdown';
@@ -15,6 +15,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
+import { ErrorBanner } from '@/components/ui/error-banner';
 
 const MANA_SYMBOLS = ['W', 'U', 'B', 'R', 'G'];
 
@@ -22,9 +23,46 @@ export function DeckBoard() {
   const { prompt, setPrompt, isGenerating, statusMessage, deck, error, generateDeck } =
     useDeckStream('/api/decks/generate');
 
+  const [isMounted, setIsMounted] = useState(false);
   const [format, setFormat] = useState('auto');
   const [isAutoColor, setIsAutoColor] = useState(true);
   const [colors, setColors] = useState<string[]>([]);
+  const [isSaving, setIsSaving] = useState(false);
+  const [saveSuccess, setSaveSuccess] = useState(false);
+  const [saveError, setSaveError] = useState<string | null>(null);
+
+  useEffect(() => {
+    setIsMounted(true);
+  }, []);
+
+  const handleSaveDeck = async () => {
+    if (!deck) return;
+    setIsSaving(true);
+    setSaveSuccess(false);
+    setSaveError(null);
+
+    try {
+      const response = await fetch('/api/decks/save', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ deck }),
+      });
+
+      if (!response.ok) {
+        const errData = await response.json();
+        throw new Error(errData.error || 'Failed to save deck');
+      }
+
+      setSaveSuccess(true);
+      setTimeout(() => setSaveSuccess(false), 3000);
+    } catch (err: unknown) {
+      setSaveError(
+        err instanceof Error ? err.message : 'An unexpected error occurred while saving.'
+      );
+    } finally {
+      setIsSaving(false);
+    }
+  };
 
   const handleGenerate = (e?: React.FormEvent) => {
     if (e) e.preventDefault();
@@ -42,6 +80,16 @@ export function DeckBoard() {
       return nextColors;
     });
   };
+
+  // Safe Hydration Fallback
+  if (!isMounted) {
+    return (
+      <div className="flex flex-col h-full gap-4 md:gap-6 min-h-0 overflow-hidden">
+        <Card className="w-full shrink-0 h-[172px] bg-muted/20 animate-pulse border-border/50 shadow-md" />
+        <Card className="w-full flex-1 bg-muted/10 animate-pulse border-border/50 shadow-md" />
+      </div>
+    );
+  }
 
   return (
     <div className="flex flex-col h-full gap-4 md:gap-6 min-h-0 overflow-hidden">
@@ -131,22 +179,48 @@ export function DeckBoard() {
       <Card className="w-full flex-1 flex flex-col shadow-md overflow-hidden min-h-0">
         <CardHeader className="py-3 px-4 md:px-6 border-b border-border bg-card shrink-0 flex flex-row items-center justify-between space-y-0">
           <CardTitle className="text-lg">Draft Board</CardTitle>
-          {isGenerating && statusMessage && (
+          {/* Status Indicator OR Save Button */}
+          {isGenerating && statusMessage ? (
             <div className="px-3 py-1 bg-primary/15 text-primary border border-primary/20 rounded-full text-xs font-semibold flex items-center gap-2 animate-in fade-in">
               <Loader2 className="w-3.5 h-3.5 animate-spin" />
               <span className="hidden sm:inline">{statusMessage}</span>
             </div>
+          ) : (
+            deck &&
+            !isGenerating && (
+              <Button
+                onClick={handleSaveDeck}
+                disabled={isSaving || saveSuccess}
+                size="sm"
+                className="h-8 gap-2 bg-primary text-primary-foreground hover:bg-primary/90 shadow-sm"
+              >
+                {isSaving ? (
+                  <Loader2 className="w-4 h-4 animate-spin" />
+                ) : saveSuccess ? (
+                  <span className="text-xs font-semibold">Saved to Forge!</span>
+                ) : (
+                  <>
+                    <Save className="w-4 h-4" />
+                    <span className="text-xs font-semibold">Save Deck</span>
+                  </>
+                )}
+              </Button>
+            )
           )}
         </CardHeader>
 
         <CardContent className="flex-1 p-4 md:p-6 overflow-y-auto grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-3 gap-6 items-start relative custom-scrollbar bg-background/50">
-          {error && (
-            <div className="absolute top-4 left-1/2 -translate-x-1/2 flex items-center gap-2 p-3 rounded-lg bg-destructive/10 text-destructive border border-destructive/20 z-20 shadow-lg w-[90%] md:w-auto">
-              <AlertCircle className="w-5 h-5 shrink-0" />
-              <span className="text-sm">{error}</span>
-            </div>
-          )}
+          {/* Generation Error */}
+          <ErrorBanner
+            message={error}
+            className="absolute top-4 left-1/2 -translate-x-1/2 z-20 shadow-lg w-[90%] md:w-auto text-sm"
+          />
 
+          {/* Save Error */}
+          <ErrorBanner
+            message={saveError}
+            className="absolute top-4 left-1/2 -translate-x-1/2 z-20 shadow-lg w-[90%] md:w-auto text-sm"
+          />
           {!deck && !isGenerating && !error && (
             <div className="col-span-full h-full min-h-[200px] flex items-center justify-center text-muted-foreground text-sm text-center p-4">
               Define your parameters and build a new deck.

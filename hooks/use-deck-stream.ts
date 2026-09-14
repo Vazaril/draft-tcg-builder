@@ -97,14 +97,12 @@ export function useDeckStream(apiEndpoint: string) {
                 } else if (parsed.type === 'error') {
                   throw new Error(parsed.message);
                 }
-              } catch (err) {
-                // Ignore incomplete JSON chunks
-              }
+              } catch {}
             }
           }
         }
       }
-    } catch (err) {
+    } catch (err: unknown) {
       setError(err instanceof Error ? err.message : 'An error occurred');
       setIsGenerating(false);
       setStatusMessage(null);
