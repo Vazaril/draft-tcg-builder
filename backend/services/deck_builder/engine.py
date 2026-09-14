@@ -35,8 +35,9 @@ def generate_deck_blueprint(user_prompt: str, explicit_format: str | None,
     system_instruction = (
             "You are an expert MTG deck builder. Analyze the user's request and construct a structural blueprint. "
             "Define color identity, format, and package categories (e.g., Ramp, Draw, Synergy). "
-            "If the user explicitly requests specific cards, list their EXACT, correctly spelled MTG names in the 'key_cards' array. "
-            "Category quotas + land count MUST equal the format deck size exactly (100 for Commander, 60 for 60-card formats)."
+            "CRITICAL: The 'key_cards' array must ONLY contain cards literally typed by the user in the prompt text. "
+            "Do NOT add staples, highly synergistic cards, or implied cards to 'key_cards'. If the user did not explicitly type the card's name, do not include it. "
+            "Category quotas + land count MUST equal the format deck size exactly (99 for Commander since the commander is handled separately, or 60 for 60-card formats)."
             + constraint_text
     )
 
@@ -171,6 +172,10 @@ def generate_deck_stream(user_prompt: str, explicit_format: str | None = None,
 
             for row in raw_exact:
                 meta = row.get("metadata", {})
+
+                if meta.get("type") != "card":
+                    continue
+
                 card_id = meta.get("oracle_id", row.get("id"))
                 name = meta.get("name", "Unknown")
 
