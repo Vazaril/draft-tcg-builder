@@ -8,17 +8,39 @@ import { CardTooltip } from '@/components/card-tooltip';
 import { MTGMarkdown } from '@/components/mtg-markdown';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
+
+const MANA_SYMBOLS = ['W', 'U', 'B', 'R', 'G'];
 
 export function DeckBoard() {
   const { prompt, setPrompt, isGenerating, statusMessage, deck, error, generateDeck } =
     useDeckStream('/api/decks/generate');
 
-  const [format, setFormat] = useState('Commander');
+  const [format, setFormat] = useState('auto');
+  const [isAutoColor, setIsAutoColor] = useState(true);
   const [colors, setColors] = useState<string[]>([]);
 
   const handleGenerate = (e?: React.FormEvent) => {
     if (e) e.preventDefault();
-    generateDeck(e);
+    const explicitFormat = format === 'auto' ? undefined : format;
+    const explicitColors = isAutoColor ? undefined : colors;
+    generateDeck(explicitFormat, explicitColors, e);
+  };
+
+  const toggleColor = (sym: string) => {
+    setColors((prev) => {
+      const nextColors = prev.includes(sym) ? prev.filter((c) => c !== sym) : [...prev, sym];
+
+      setIsAutoColor(nextColors.length === 0);
+
+      return nextColors;
+    });
   };
 
   return (
@@ -35,26 +57,72 @@ export function DeckBoard() {
           isStreaming={isGenerating}
           placeholder="e.g. A graveyard recursion engine featuring The Gitrog Monster"
         />
-        <div className="bg-secondary/40 border-t border-border/50 px-4 py-3 flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-4 text-sm">
-          <div className="flex items-center gap-2 text-secondary-foreground font-medium">
+        <div className="bg-secondary/40 border-t border-border/50 px-4 py-3 flex flex-col sm:flex-row sm:items-center gap-4 text-sm">
+          <div className="flex items-center gap-2 text-secondary-foreground font-medium shrink-0">
             <Settings2 className="w-4 h-4" />
             <span>Parameters:</span>
           </div>
-          <div className="flex flex-wrap gap-2">
-            <Button
-              variant="outline"
-              size="sm"
-              className="h-7 text-xs bg-background shadow-sm hover:border-primary/50"
-            >
-              Format: {format}
-            </Button>
-            <Button
-              variant="outline"
-              size="sm"
-              className="h-7 text-xs bg-background shadow-sm hover:border-primary/50"
-            >
-              Colors: {colors.length > 0 ? colors.join('/') : 'Auto'}
-            </Button>
+
+          <div className="flex flex-wrap items-center gap-4">
+            {/* Format Dropdown */}
+            <Select value={format} onValueChange={setFormat} disabled={isGenerating}>
+              <SelectTrigger className="h-8 w-[140px] bg-background text-xs shadow-sm border-border/80">
+                <SelectValue placeholder="Format" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="auto">Auto-detect</SelectItem>
+                <SelectItem value="commander">Commander</SelectItem>
+                <SelectItem value="standard">Standard</SelectItem>
+              </SelectContent>
+            </Select>
+
+            <div className="h-4 w-px bg-border/80 hidden sm:block" />
+
+            {/* Color Identity Toggles */}
+            <div className="flex items-center gap-1.5 flex-wrap">
+              <Button
+                type="button"
+                variant={isAutoColor ? 'default' : 'outline'}
+                size="sm"
+                disabled={isGenerating}
+                onClick={() => {
+                  setIsAutoColor(true);
+                  setColors([]);
+                }}
+                className={`h-8 text-xs shadow-sm transition-all ${
+                  isAutoColor
+                    ? 'border-primary ring-1 ring-primary/50'
+                    : 'text-muted-foreground hover:text-foreground hover:border-primary/50 bg-background'
+                }`}
+              >
+                Auto-detect
+              </Button>
+
+              <div className="h-4 w-px bg-border/80 mx-1 hidden sm:block" />
+
+              {MANA_SYMBOLS.map((sym) => {
+                const isActive = !isAutoColor && colors.includes(sym);
+                return (
+                  <Button
+                    key={sym}
+                    type="button"
+                    variant={isActive ? 'default' : 'outline'}
+                    size="icon"
+                    disabled={isGenerating}
+                    onClick={() => toggleColor(sym)}
+                    className={`h-8 w-8 rounded-full shadow-sm transition-all flex items-center justify-center ${
+                      isActive
+                        ? 'border-primary ring-1 ring-primary/50'
+                        : 'text-muted-foreground hover:text-foreground hover:border-primary/50 bg-background'
+                    }`}
+                    title={sym}
+                  >
+                    {/* Utilizing the ms font classes to render the vector symbol */}
+                    <i className={`ms ms-${sym.toLowerCase()} text-[15px]`} />
+                  </Button>
+                );
+              })}
+            </div>
           </div>
         </div>
       </Card>

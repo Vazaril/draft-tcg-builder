@@ -3,8 +3,7 @@ import { type NextRequest } from 'next/server';
 export async function POST(req: NextRequest) {
   try {
     const backendUrl = process.env.PYTHON_BACKEND_URL;
-
-    const body = await req.json();
+    const { prompt, format, colors } = await req.json();
 
     const upstreamRes = await fetch(`${backendUrl}/api/decks/generate`, {
       method: 'POST',
@@ -12,7 +11,7 @@ export async function POST(req: NextRequest) {
         'Content-Type': 'application/json',
         Accept: 'text/event-stream',
       },
-      body: JSON.stringify(body),
+      body: JSON.stringify({ prompt, format, colors }),
     });
 
     if (!upstreamRes.ok) {

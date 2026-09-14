@@ -31,7 +31,11 @@ export function useDeckStream(apiEndpoint: string) {
   const [deck, setDeck] = useState<DeckProposal | null>(null);
   const [error, setError] = useState<string | null>(null);
 
-  const generateDeck = async (e?: React.FormEvent) => {
+  const generateDeck = async (
+    explicitFormat?: string,
+    explicitColors?: string[],
+    e?: React.FormEvent
+  ) => {
     if (e) e.preventDefault();
     if (!prompt.trim() || isGenerating) return;
 
@@ -44,7 +48,11 @@ export function useDeckStream(apiEndpoint: string) {
       const response = await fetch(apiEndpoint, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', Accept: 'text/event-stream' },
-        body: JSON.stringify({ prompt }),
+        body: JSON.stringify({
+          prompt,
+          format: explicitFormat,
+          colors: explicitColors,
+        }),
       });
 
       if (!response.body) throw new Error('No stream returned');
@@ -70,10 +78,8 @@ export function useDeckStream(apiEndpoint: string) {
                 if (parsed.type === 'status') {
                   setStatusMessage(parsed.message);
                 } else if (parsed.type === 'partial' && parsed.stage === 'blueprint') {
-                  // Initialize the empty blueprint
                   setDeck(parsed.data);
                 } else if (parsed.type === 'partial' && parsed.stage === 'category') {
-                  // Append the fully scored category to the deck
                   setDeck((prev) => {
                     if (!prev) return prev;
                     return {
