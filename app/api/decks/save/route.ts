@@ -100,23 +100,25 @@ export async function POST(req: Request) {
     if (deckError) throw deckError;
     const deckId = insertedDeck.id;
 
-    const cardsToInsert: Array<{
-      deck_id: string;
-      card_id: string;
-      quantity: number;
-      zone: string;
-    }> = [];
+    const cardsMap = new Map<
+      string,
+      { deck_id: string; card_id: string; quantity: number; zone: string }
+    >();
+
+    const addCard = (cardId: string, quantity: number, zone: string) => {
+      const key = `${cardId}-${zone}`;
+      if (cardsMap.has(key)) {
+        cardsMap.get(key)!.quantity += quantity;
+      } else {
+        cardsMap.set(key, { deck_id: deckId, card_id: cardId, quantity, zone });
+      }
+    };
 
     // Commander
     if (deck.commander) {
       const commanderId = idByName.get(deck.commander.toLowerCase());
       if (commanderId) {
-        cardsToInsert.push({
-          deck_id: deckId,
-          card_id: commanderId,
-          quantity: 1,
-          zone: 'commander',
-        });
+        addCard(commanderId, 1, 'commander');
       }
     }
 
@@ -125,12 +127,7 @@ export async function POST(req: Request) {
       categoryCards.forEach((card) => {
         const mappedId = idByOracle.get(card.id);
         if (mappedId) {
-          cardsToInsert.push({
-            deck_id: deckId,
-            card_id: mappedId,
-            quantity: card.quantity,
-            zone: 'mainboard',
-          });
+          addCard(mappedId, card.quantity, 'mainboard');
         }
       });
     });
@@ -139,15 +136,13 @@ export async function POST(req: Request) {
     deck.lands?.forEach((land) => {
       const mappedId = idByName.get(land.name.toLowerCase());
       if (mappedId) {
-        cardsToInsert.push({
-          deck_id: deckId,
-          card_id: mappedId,
-          quantity: land.quantity,
-          zone: 'mainboard',
-        });
+        addCard(mappedId, land.quantity, 'mainboard');
       }
     });
 
+    const cardsToInsert = Array.from(cardsMap.values());
+
+    // Batch Insert
     if (cardsToInsert.length > 0) {
       const { error: insertCardsError } = await supabase
         .from('mtg_deck_cards')

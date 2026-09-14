@@ -59,6 +59,8 @@ export function DeckBoard() {
       setSaveError(
         err instanceof Error ? err.message : 'An unexpected error occurred while saving.'
       );
+
+      setTimeout(() => setSaveError(null), 5000);
     } finally {
       setIsSaving(false);
     }
@@ -81,7 +83,6 @@ export function DeckBoard() {
     });
   };
 
-  // Safe Hydration Fallback
   if (!isMounted) {
     return (
       <div className="flex flex-col h-full gap-4 md:gap-6 min-h-0 overflow-hidden">
@@ -224,6 +225,34 @@ export function DeckBoard() {
           {!deck && !isGenerating && !error && (
             <div className="col-span-full h-full min-h-[200px] flex items-center justify-center text-muted-foreground text-sm text-center p-4">
               Define your parameters and build a new deck.
+            </div>
+          )}
+
+          {/* Command Zone */}
+          {deck?.commander && (
+            <div className="col-span-full w-full flex flex-col bg-gradient-to-br from-primary/10 via-secondary/20 to-background rounded-xl border border-primary/40 overflow-hidden shadow-md relative">
+              <div className="absolute top-0 left-1/4 w-1/2 h-full bg-primary/5 blur-3xl -z-10" />
+
+              <div className="p-3 border-b border-primary/20 bg-primary/5 flex items-center justify-between shrink-0">
+                <h3 className="font-bold text-sm uppercase tracking-widest text-primary drop-shadow-sm truncate pr-2">
+                  Command Zone
+                </h3>
+                <span className="text-[10px] font-bold uppercase tracking-wider bg-primary/20 text-primary px-2 py-0.5 rounded-full border border-primary/30 shadow-sm shrink-0">
+                  Legendary
+                </span>
+              </div>
+
+              <div className="p-4 flex flex-col gap-2.5">
+                <div className="bg-card/80 backdrop-blur-sm rounded-lg p-4 shadow-sm border border-primary/30 hover:border-primary/80 hover:bg-card transition-all duration-300 flex justify-between items-center group">
+                  <div className="font-semibold text-base flex items-center gap-2 text-card-foreground">
+                    <span className="text-sm text-primary font-bold">1x</span>
+                    <CardTooltip cardName={deck.commander} />
+                  </div>
+                  <span className="text-[11px] font-mono bg-background text-muted-foreground px-2 py-1 rounded border border-border/50 shadow-sm hidden sm:block">
+                    Deck General
+                  </span>
+                </div>
+              </div>
             </div>
           )}
 
