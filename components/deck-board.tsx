@@ -25,6 +25,9 @@ export function DeckBoard() {
     <div className="flex flex-col h-full gap-4 md:gap-6 min-h-0 overflow-hidden">
       {/* Console Card */}
       <Card className="w-full shrink-0 z-10 overflow-hidden shadow-md">
+        <CardHeader className="py-3 px-4 md:px-6 bg-card shrink-0 flex flex-row items-center justify-between space-y-0">
+          <CardTitle className="text-lg">Build Console</CardTitle>
+        </CardHeader>
         <ChatInput
           value={prompt}
           onChange={setPrompt}
@@ -78,7 +81,7 @@ export function DeckBoard() {
 
           {!deck && !isGenerating && !error && (
             <div className="col-span-full h-full min-h-[200px] flex items-center justify-center text-muted-foreground text-sm text-center p-4">
-              Define your parameters and forge a new deck.
+              Define your parameters and build a new deck.
             </div>
           )}
 
