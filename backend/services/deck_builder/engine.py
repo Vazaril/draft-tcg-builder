@@ -41,9 +41,8 @@ def generate_deck_blueprint(user_prompt: str, explicit_format: str | None,
             + constraint_text
     )
 
-    response = gemini_client.models.generate_content(
+    chat_session = gemini_client.chats.create(
         model=gemini_model,
-        contents=user_prompt,
         config=types.GenerateContentConfig(
             system_instruction=system_instruction,
             temperature=0.1,
@@ -51,6 +50,8 @@ def generate_deck_blueprint(user_prompt: str, explicit_format: str | None,
             response_schema=DeckBlueprint
         )
     )
+
+    response = chat_session.send_message(user_prompt)
 
     blueprint = DeckBlueprint.model_validate_json(response.text)
 
@@ -101,15 +102,17 @@ def _score_category_candidates(category_name: str, quota: int, candidates: list[
     )
 
     try:
-        response = gemini_client.models.generate_content(
+        chat_session = gemini_client.chats.create(
             model=gemini_model,
-            contents=prompt,
             config=types.GenerateContentConfig(
                 temperature=0.2,
                 response_mime_type="application/json",
                 response_schema=CategoryScores
             )
         )
+
+        response = chat_session.send_message(prompt)
+
         scores_data = CategoryScores.model_validate_json(response.text).scores
         scores_by_id = {s.card_id: s for s in scores_data}
 
