@@ -2,41 +2,36 @@ import os
 import json
 import psycopg2
 import psycopg2.extras
-from llama_index.embeddings.text_embeddings_inference import TextEmbeddingsInference
+import re
+from llama_index.embeddings.ollama import OllamaEmbedding
 
 
 def exact_search_mtg(card_names: list) -> list[dict]:
     """
     Looks up exact MTG cards and their rulings by name, bypassing vector search.
+    Now punctuation-agnostic to handle user typos (e.g., "Clive Ifrits Dominant" == "Clive, Ifrit's Dominant").
     """
     if not card_names:
         return []
 
     try:
-        import psycopg2
-        import psycopg2.extras
-
         db_url = os.environ.get("DB_URL")
         conn = psycopg2.connect(db_url, cursor_factory=psycopg2.extras.RealDictCursor)
         cursor = conn.cursor()
 
-        names_lower = [name.lower() for name in card_names]
+        clean_names = [re.sub(r'[^a-z0-9]', '', name.lower()) for name in card_names]
 
-        placeholders = ', '.join(['%s'] * len(names_lower))
+        placeholders = ', '.join(['%s'] * len(clean_names))
 
-        # Search both card nodes ('name') and ruling nodes ('card_name').
-        # vecs.data_mtg_nodes is the shape services/ingestion/pipeline.py's
-        # PGVectorStore actually produces (node_id/metadata_) - aliased back
-        # to id/metadata here so callers don't need to care.
         sql_query = f"""
-            SELECT node_id AS id, metadata_ AS metadata, text
-            FROM vecs.data_mtg_nodes
-            WHERE lower(metadata_->>'name') IN ({placeholders})
-               OR lower(metadata_->>'card_name') IN ({placeholders})
-            LIMIT 20;
+            SELECT id, metadata 
+            FROM vecs.mtg_nodes 
+            WHERE regexp_replace(lower(metadata->>'name'), '[^a-z0-9]', '', 'g') IN ({placeholders})
+               OR regexp_replace(lower(metadata->>'card_name'), '[^a-z0-9]', '', 'g') IN ({placeholders})
+            LIMIT 20; 
         """
 
-        cursor.execute(sql_query, names_lower + names_lower)
+        cursor.execute(sql_query, clean_names + clean_names)
         results = cursor.fetchall()
 
         cursor.close()
@@ -50,16 +45,18 @@ def exact_search_mtg(card_names: list) -> list[dict]:
 
 def hybrid_search_mtg(query_text: str, match_count: int = 5) -> list[dict]:
     """
-    Takes a user question, embeds it via the local TEI (qwen3-embedding) service,
-    and calls the local Postgres Hybrid Search RPC.
+    Takes a user question, embeds it locally using Ollama (qwen3-embedding),
+    truncates it to 1536 dimensions, and calls the local Postgres Hybrid Search RPC.
     """
     try:
-        embedder = TextEmbeddingsInference(
-            model_name="Qwen/Qwen3-Embedding-0.6B",
-            base_url=os.environ.get("EMBEDDER_BASE_URL") or "http://localhost:8082",
+        embedder = OllamaEmbedding(
+            model_name="qwen3-embedding",
+            base_url=os.environ.get("OLLAMA_BASE_URL")
         )
 
-        query_embedding = embedder.get_text_embedding(query_text)
+        raw_embedding = embedder.get_text_embedding(query_text)
+
+        query_embedding = raw_embedding[:1536]
 
         vector_str = f"[{','.join(map(str, query_embedding))}]"
 

@@ -9,6 +9,7 @@ class DeckBlueprint(BaseModel):
     commander: str | None = Field(description="Name of the commander, if applicable")
     color_identity: list[str] = Field(description="List of MTG colors: W, U, B, R, G. Empty list for colorless.")
     format: str = Field(description="Format legality (e.g., commander, standard)")
+    key_cards: list[str] = Field(default_factory=list, description="Exact, correctly spelled MTG names of specific cards explicitly requested by the user.")
     categories: list[DeckCategory] = Field(description="Functional categories summing to the required non-land card count")
     land_count: int = Field(description="Total number of lands required")
 
