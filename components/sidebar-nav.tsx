@@ -2,14 +2,13 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { User, Layers, Search, Library } from 'lucide-react';
+import { User, Layers, Library } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 
 const NAV_ITEMS = [
-  { name: 'Profile', href: '/protected/profile', icon: User },
   { name: 'Deck Builder', href: '/protected/deck-builder', icon: Layers },
   { name: 'My Decklist', href: '/protected/my-decks', icon: Library },
-  { name: 'Search Decks', href: '/protected/search', icon: Search },
+  { name: 'Profile', href: '/protected/profile', icon: User },
 ];
 
 export function SidebarNav() {

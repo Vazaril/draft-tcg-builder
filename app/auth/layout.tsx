@@ -2,14 +2,18 @@ import { SplitPage, SplitPageFormPane, SplitPageShowcasePane } from '@/component
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { ThemeSwitcher } from '@/components/theme-switcher';
 import { siteConfig } from '@/config/site';
+import { Logo } from '@/components/ui/logo';
 
 export default function AuthLayout({ children }: { children: React.ReactNode }) {
   return (
     <SplitPage>
       <SplitPageFormPane>
         <div className="mx-auto flex w-full max-w-sm flex-col gap-8">
-          <div className="flex flex-col gap-2 text-center lg:text-left">
-            <h1 className="font-pixel text-4xl font-bold text-primary">{siteConfig.title}</h1>
+          <div className="flex flex-col items-center justify-center gap-2 text-center">
+            <div className="flex items-center justify-center gap-2">
+              <Logo className="w-10 h-10" />
+              <h2 className="font-pixel text-4xl font-bold text-primary">{siteConfig.title}</h2>
+            </div>
             <p className="text-base">{siteConfig.slogan}</p>
           </div>
           {children}
