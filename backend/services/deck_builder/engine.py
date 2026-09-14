@@ -5,7 +5,7 @@ from google import genai
 from google.genai import types
 
 from .schemas import DeckBlueprint, CategoryScores
-from ..retrieval.search import filtered_hybrid_search_mtg
+from ..retrieval.search import filtered_hybrid_search_mtg, exact_search_mtg
 
 gemini_client = genai.Client(api_key=os.environ.get("GEMINI_API_KEY"))
 gemini_model = os.environ.get("GEMINI_MODEL")
@@ -35,6 +35,7 @@ def generate_deck_blueprint(user_prompt: str, explicit_format: str | None,
     system_instruction = (
             "You are an expert MTG deck builder. Analyze the user's request and construct a structural blueprint. "
             "Define color identity, format, and package categories (e.g., Ramp, Draw, Synergy). "
+            "If the user explicitly requests specific cards, list their EXACT, correctly spelled MTG names in the 'key_cards' array. "
             "Category quotas + land count MUST equal the format deck size exactly (100 for Commander, 60 for 60-card formats)."
             + constraint_text
     )
@@ -137,7 +138,8 @@ def _score_category_candidates(category_name: str, quota: int, candidates: list[
         return candidates
 
 
-def generate_deck_stream(user_prompt: str, explicit_format: str | None = None, explicit_colors: list[str] | None = None):
+def generate_deck_stream(user_prompt: str, explicit_format: str | None = None,
+                         explicit_colors: list[str] | None = None):
     try:
         yield _sse({"type": "status", "stage": "intent", "message": "Designing deck blueprint..."})
 
@@ -162,11 +164,53 @@ def generate_deck_stream(user_prompt: str, explicit_format: str | None = None, e
         if blueprint.commander:
             seen_ids.add(blueprint.commander.lower())
 
+        if blueprint.key_cards:
+            raw_exact = exact_search_mtg(blueprint.key_cards)
+            key_cards_list = []
+            max_copies = 1 if blueprint.format.lower() == "commander" else 4
+
+            for row in raw_exact:
+                meta = row.get("metadata", {})
+                card_id = meta.get("oracle_id", row.get("id"))
+                name = meta.get("name", "Unknown")
+
+                if card_id not in seen_ids and name.lower() not in seen_ids:
+                    key_cards_list.append({
+                        "id": card_id,
+                        "name": name,
+                        "cmc": meta.get("cmc", 0),
+                        "colors": meta.get("colors", []),
+                        "type": meta.get("type", "card"),
+                        "oracle_text": extract_oracle_text(meta),
+                        "score": 10,
+                        "quantity": max_copies,
+                        "reasoning": "Explicitly requested."
+                    })
+                    seen_ids.add(card_id)
+                    seen_ids.add(name.lower())
+
+            if key_cards_list:
+                decklist["categories"]["Requested Cards"] = key_cards_list
+                yield _sse(
+                    {"type": "partial", "stage": "category", "category": "Requested Cards", "cards": key_cards_list})
+
+                total_requested = sum(c["quantity"] for c in key_cards_list)
+
+                blueprint.categories.sort(key=lambda x: x.quota, reverse=True)
+                for cat in blueprint.categories:
+                    if total_requested <= 0:
+                        break
+                    if cat.quota > 0:
+                        deduct = min(cat.quota, total_requested)
+                        cat.quota -= deduct
+                        total_requested -= deduct
+
         with concurrent.futures.ThreadPoolExecutor(max_workers=6) as executor:
             future_to_category = {}
 
             for category in blueprint.categories:
-                # 1. Pre-filtered search via PostgreSQL
+                if category.quota <= 0:
+                    continue
                 raw_candidates = filtered_hybrid_search_mtg(
                     query_text=category.search_query,
                     color_identity=blueprint.color_identity,
@@ -174,7 +218,6 @@ def generate_deck_stream(user_prompt: str, explicit_format: str | None = None, e
                     match_count=max(category.quota * 3, 15)
                 )
 
-                # 2. Extract full oracle text from _node_content
                 clean_candidates = []
                 for row in raw_candidates:
                     meta = row.get("metadata", {})
@@ -191,7 +234,6 @@ def generate_deck_stream(user_prompt: str, explicit_format: str | None = None, e
                             "oracle_text": extract_oracle_text(meta)
                         })
 
-                # 3. Concurrent scoring
                 future = executor.submit(
                     _score_category_candidates,
                     category.name,
@@ -202,7 +244,6 @@ def generate_deck_stream(user_prompt: str, explicit_format: str | None = None, e
                 )
                 future_to_category[future] = (category.name, category.quota)
 
-            # 4. Greedy knapsack slot allocation
             for future in concurrent.futures.as_completed(future_to_category):
                 cat_name, cat_quota = future_to_category[future]
                 scored_cards = future.result()

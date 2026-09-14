@@ -2,38 +2,36 @@ import os
 import json
 import psycopg2
 import psycopg2.extras
+import re
 from llama_index.embeddings.ollama import OllamaEmbedding
 
 
 def exact_search_mtg(card_names: list) -> list[dict]:
     """
     Looks up exact MTG cards and their rulings by name, bypassing vector search.
+    Now punctuation-agnostic to handle user typos (e.g., "Clive Ifrits Dominant" == "Clive, Ifrit's Dominant").
     """
     if not card_names:
         return []
 
     try:
-        import psycopg2
-        import psycopg2.extras
-
         db_url = os.environ.get("DB_URL")
         conn = psycopg2.connect(db_url, cursor_factory=psycopg2.extras.RealDictCursor)
         cursor = conn.cursor()
 
-        names_lower = [name.lower() for name in card_names]
+        clean_names = [re.sub(r'[^a-z0-9]', '', name.lower()) for name in card_names]
 
-        placeholders = ', '.join(['%s'] * len(names_lower))
+        placeholders = ', '.join(['%s'] * len(clean_names))
 
-        # Search both card nodes ('name') and ruling nodes ('card_name')
         sql_query = f"""
             SELECT id, metadata 
             FROM vecs.mtg_nodes 
-            WHERE lower(metadata->>'name') IN ({placeholders})
-               OR lower(metadata->>'card_name') IN ({placeholders})
+            WHERE regexp_replace(lower(metadata->>'name'), '[^a-z0-9]', '', 'g') IN ({placeholders})
+               OR regexp_replace(lower(metadata->>'card_name'), '[^a-z0-9]', '', 'g') IN ({placeholders})
             LIMIT 20; 
         """
 
-        cursor.execute(sql_query, names_lower + names_lower)
+        cursor.execute(sql_query, clean_names + clean_names)
         results = cursor.fetchall()
 
         cursor.close()
