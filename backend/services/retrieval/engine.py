@@ -31,7 +31,7 @@ def rewrite_search_query(message: str, history: list) -> str:
         "all the necessary card names and keywords being discussed. "
         "CRITICAL: If you identify any specific Magic: The Gathering entities in the conversation, "
         "wrap them strictly as follows:"
-        "- Wrap card names in [[card:Card Name]] (e.g., [[card:Darksteel Colossus]])."
+        "- Always wrap every Magic card name in [[card:Card Name]], even if mentioned inside parentheses or as an off-hand example."
         "- Wrap rule numbers in [[rule:Rule Number]] (e.g., [[rule:702.12b]])."
         "- Wrap MTG keywords in [[kw:Keyword]] (e.g., [[kw:Indestructible]])."
         "Do not answer the question. Only output the rewritten search query."
@@ -129,7 +129,7 @@ def generate_mtg_answer(message: str, history: list = None) -> Generator[str, An
         "You are an expert Magic: The Gathering Judge. "
         "Answer clearly and accurately using the provided context. "
         "Format citations strictly as follows:\n"
-        "- Wrap card names in [[card:Card Name]] (e.g., [[card:Darksteel Colossus]]).\n"
+        "- Always wrap every Magic card name in [[card:Card Name]], even if mentioned inside parentheses or as an off-hand example.\n"
         "- Wrap rule numbers in [[rule:Rule Number]] (e.g., [[rule:702.12b]]).\n"
         "- Wrap MTG keywords in [[kw:Keyword]] (e.g., [[kw:Indestructible]]).\n"
         "If the context does not contain enough information, state what is missing."
@@ -148,11 +148,17 @@ def generate_mtg_answer(message: str, history: list = None) -> Generator[str, An
 
     def generate():
         yield f"data: {json.dumps({'type': 'citations', 'context_used': context_used})}\n\n"
+        try:
+            for chunk in response_stream:
+                if chunk.text:
+                    yield f"data: {json.dumps({'type': 'text', 'content': chunk.text})}\n\n"
 
-        for chunk in response_stream:
-            if chunk.text:
-                yield f"data: {json.dumps({'type': 'text', 'content': chunk.text})}\n\n"
+        except Exception as e:
+            error_msg = f"\n\n**[Connection Error: The AI is currently overloaded. Please try again.]**"
+            yield f"data: {json.dumps({'type': 'text', 'content': error_msg})}\n\n"
+            print(f"Streaming error: {e}")
 
-        yield f"data: {json.dumps({'type': 'done'})}\n\n"
+        finally:
+            yield f"data: {json.dumps({'type': 'done'})}\n\n"
 
     return generate()
