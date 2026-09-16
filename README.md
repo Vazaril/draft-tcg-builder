@@ -67,7 +67,7 @@ DRAFT is built on a modern, decoupled stack:
 ### 1. Clone the repository
 
 ```bash
-git clone [https://github.com/Vazaril/draft-tcg-builder.git](https://github.com/Vazaril/draft-tcg-builder.git)
+git clone https://github.com/Vazaril/draft-tcg-builder.git
 cd draft-tcg-builder
 ```
 
