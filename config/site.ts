@@ -1,6 +1,6 @@
 export const siteConfig = {
   title: 'DRAFT',
-  description: 'The ultimate AI supported deck creation and management tool.',
+  description: 'The ultimate AI supported deck building and management tool.',
   slogan: 'Deck your draft',
   url: 'http://localhost:3000',
   logged_in_routing: '/protected/profile',

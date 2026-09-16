@@ -1,9 +1,10 @@
 'use client';
 
 import { useState, useRef, useEffect } from 'react';
-import { MessageCircle, X, AlertCircle } from 'lucide-react';
+import { MessageCircle, X } from 'lucide-react';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
+import { ErrorBanner } from '@/components/ui/error-banner';
 
 import { useChatStream } from '@/hooks/use-chat-stream';
 import { ChatMessageItem } from '@/components/chat-message-item';
@@ -49,12 +50,7 @@ export function JudgeChat() {
 
             {isModelThinking && <TypingIndicator />}
 
-            {error && (
-              <div className="flex items-center gap-2 p-3 text-xs rounded-xl bg-destructive/10 text-destructive border border-destructive/20 animate-in fade-in duration-200">
-                <AlertCircle className="w-4 h-4 shrink-0" />
-                <span className="flex-1 leading-normal">{error}</span>
-              </div>
-            )}
+            <ErrorBanner message={error} />
 
             <div ref={messagesEndRef} />
           </CardContent>

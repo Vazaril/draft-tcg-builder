@@ -6,12 +6,16 @@ import { SidebarNav } from '@/components/sidebar-nav';
 import { Sidebar, SidebarHeader, SidebarContent, SidebarFooter } from '@/components/ui/sidebar';
 import { siteConfig } from '@/config/site';
 import { JudgeChatShell } from '@/components/judge-chat-shell';
+import { Logo } from '@/components/ui/logo';
 
 export default function ProtectedLayout({ children }: { children: React.ReactNode }) {
   const sidebarContent = (
     <Sidebar>
       <SidebarHeader>
-        <h2 className="font-pixel text-2xl font-bold text-primary">{siteConfig.title}</h2>
+        <div className="flex items-center gap-2">
+          <Logo className="w-8 h-8" />
+          <h2 className="font-pixel text-2xl font-bold text-primary">{siteConfig.title}</h2>
+        </div>
       </SidebarHeader>
       <SidebarContent>
         <SidebarNav />
