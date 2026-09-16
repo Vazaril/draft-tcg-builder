@@ -1,5 +1,5 @@
 from flask import Blueprint, jsonify, request, Response
-from services.deck_builder.engine import generate_deck_stream
+from services.generation.engine import generate_deck_stream
 
 decks_bp = Blueprint("decks", __name__, url_prefix="/api/decks")
 
